@@ -108,7 +108,7 @@ export const fetchTransactionsAction = internalAction({
   },
   handler: async (ctx, args) => {
     // Get the address details
-    const address = await ctx.runQuery(internal.cryptoTransfers.getAddress, {
+    const address = await ctx.runQuery(internal.transactions.getAddress, {
       addressId: args.addressId,
     });
 
@@ -132,7 +132,7 @@ export const fetchTransactionsAction = internalAction({
     try {
       // Get the latest transaction timestamp
       const latestTimestamp = await ctx.runQuery(
-        internal.cryptoTransfers.getLatestTransactionTimestamp,
+        internal.transactions.getLatestTransactionTimestamp,
         { addressId: args.addressId },
       );
 
@@ -188,7 +188,7 @@ export const storeTransactionsAndReschedule = internalMutation({
           addressId: args.addressId,
           userId: address.userId,
           transactionId: transfer.transaction_id,
-          cryptoType: "USDT" as const,
+          cryptoType: "USDT",
           from: transfer.from,
           to: transfer.to,
           amount: transfer.value,
@@ -208,7 +208,7 @@ export const storeTransactionsAndReschedule = internalMutation({
     const delay = args.error ? 30000 : 5000; // 30s on error, 5s normally
     await ctx.scheduler.runAfter(
       delay,
-      internal.cryptoTransfers.processTransactionFetch,
+      internal.transactions.processTransactionFetch,
       { addressId: args.addressId },
     );
   },
@@ -222,7 +222,7 @@ export const processTransactionFetch = internalAction({
   handler: async (ctx, args) => {
     // Fetch transactions from external API
     const result = await ctx.runAction(
-      internal.cryptoTransfers.fetchTransactionsAction,
+      internal.transactions.fetchTransactionsAction,
       {
         addressId: args.addressId,
       },
@@ -230,7 +230,7 @@ export const processTransactionFetch = internalAction({
 
     // Store transactions and reschedule
     await ctx.runMutation(
-      internal.cryptoTransfers.storeTransactionsAndReschedule,
+      internal.transactions.storeTransactionsAndReschedule,
       {
         addressId: args.addressId,
         transfers: result.transfers,

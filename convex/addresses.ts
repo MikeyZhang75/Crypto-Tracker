@@ -3,7 +3,6 @@ import { ConvexError, v } from "convex/values";
 import { CRYPTO_SYMBOLS } from "@/lib/constants";
 import { validateCryptoAddress } from "@/lib/validator";
 import { internal } from "./_generated/api";
-import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
 export const list = query({
@@ -79,7 +78,7 @@ export const add = mutation({
 
     const now = Date.now();
     return await ctx.db.insert("addresses", {
-      userId: userId as Id<"users">,
+      userId: userId,
       cryptoType: args.cryptoType,
       address: args.address,
       label: args.label,
@@ -104,7 +103,7 @@ export const update = mutation({
       });
     }
 
-    const address = (await ctx.db.get(args.id)) as Doc<"addresses">;
+    const address = await ctx.db.get(args.id);
     if (!address) {
       throw new ConvexError({
         code: "NOT_FOUND",
@@ -168,7 +167,7 @@ export const toggleListening = mutation({
       // Schedule the transaction fetcher to run immediately
       await ctx.scheduler.runAfter(
         0,
-        internal.cryptoTransfers.processTransactionFetch,
+        internal.transactions.processTransactionFetch,
         {
           addressId: args.id,
         },

@@ -77,7 +77,7 @@ async function fetchTronUSDTTransfers(address: string, lastTimestamp = 0) {
 
 // Internal query to get address details
 export const getAddress = internalQuery({
-  args: { addressId: v.id("cryptoAddresses") },
+  args: { addressId: v.id("addresses") },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.addressId);
   },
@@ -85,7 +85,7 @@ export const getAddress = internalQuery({
 
 // Internal query to get latest transaction timestamp
 export const getLatestTransactionTimestamp = internalQuery({
-  args: { addressId: v.id("cryptoAddresses") },
+  args: { addressId: v.id("addresses") },
   handler: async (ctx, args) => {
     const latestTransaction = await ctx.db
       .query("transactions")
@@ -104,7 +104,7 @@ export const getLatestTransactionTimestamp = internalQuery({
 // Internal action to fetch transactions from external API
 export const fetchTransactionsAction = internalAction({
   args: {
-    addressId: v.id("cryptoAddresses"),
+    addressId: v.id("addresses"),
   },
   handler: async (ctx, args) => {
     // Get the address details
@@ -155,7 +155,7 @@ export const fetchTransactionsAction = internalAction({
 // Internal mutation to store transactions and schedule next fetch
 export const storeTransactionsAndReschedule = internalMutation({
   args: {
-    addressId: v.id("cryptoAddresses"),
+    addressId: v.id("addresses"),
     transfers: v.array(v.any()),
     shouldContinue: v.boolean(),
     error: v.optional(v.boolean()),
@@ -217,7 +217,7 @@ export const storeTransactionsAndReschedule = internalMutation({
 // Internal action that combines fetch and store
 export const processTransactionFetch = internalAction({
   args: {
-    addressId: v.id("cryptoAddresses"),
+    addressId: v.id("addresses"),
   },
   handler: async (ctx, args) => {
     // Fetch transactions from external API

@@ -7,7 +7,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { api } from "@/convex/_generated/api";
 
 export default function AddressesPage() {
-  const addresses = useQuery(api.cryptoAddresses.list, {});
+  const addresses = useQuery(api.addresses.list, {});
 
   return (
     <>

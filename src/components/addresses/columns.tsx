@@ -8,7 +8,7 @@ import { AddressActions } from "./address-actions";
 import { EditableLabelCell } from "./editable-label-cell";
 import { ListeningToggle } from "./listening-toggle";
 
-export const columns: ColumnDef<Doc<"cryptoAddresses">>[] = [
+export const columns: ColumnDef<Doc<"addresses">>[] = [
   {
     id: "index",
     header: "ID",

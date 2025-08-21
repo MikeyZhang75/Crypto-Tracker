@@ -63,7 +63,7 @@ const formSchema = z
 
 export function CreateAddressDialog() {
   const [open, setOpen] = useState(false);
-  const addAddress = useMutation(api.cryptoAddresses.add);
+  const addAddress = useMutation(api.addresses.add);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

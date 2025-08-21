@@ -10,14 +10,14 @@ import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 
 interface EditableLabelCellProps {
-  address: Doc<"cryptoAddresses">;
+  address: Doc<"addresses">;
 }
 
 export function EditableLabelCell({ address }: EditableLabelCellProps) {
   const [value, setValue] = useState(address.label || "");
   const [isDirty, setIsDirty] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const updateAddress = useMutation(api.cryptoAddresses.update);
+  const updateAddress = useMutation(api.addresses.update);
 
   // Update local state when address prop changes and not dirty
   useEffect(() => {

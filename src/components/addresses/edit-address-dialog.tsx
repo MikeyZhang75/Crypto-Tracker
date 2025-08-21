@@ -19,7 +19,7 @@ import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 
 interface EditAddressDialogProps {
-  address: Doc<"cryptoAddresses">;
+  address: Doc<"addresses">;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -30,7 +30,7 @@ export function EditAddressDialog({
   onOpenChange,
 }: EditAddressDialogProps) {
   const [label, setLabel] = useState(address.label || "");
-  const updateAddress = useMutation(api.cryptoAddresses.update);
+  const updateAddress = useMutation(api.addresses.update);
 
   // Update local state when address prop changes
   useEffect(() => {

@@ -9,12 +9,12 @@ import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 
 interface ListeningToggleProps {
-  address: Doc<"cryptoAddresses">;
+  address: Doc<"addresses">;
 }
 
 export function ListeningToggle({ address }: ListeningToggleProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const toggleListening = useMutation(api.cryptoAddresses.toggleListening);
+  const toggleListening = useMutation(api.addresses.toggleListening);
 
   const handleToggle = async (checked: boolean) => {
     setIsLoading(true);

@@ -22,11 +22,6 @@ import { Drawer as DrawerPrimitive } from "vaul";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -146,16 +141,12 @@ export function WebhookHistoryDrawer({
       onOpenChange={setOpen}
       direction={isMobile ? "bottom" : "right"}
     >
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DrawerPrimitive.Trigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <IconHistory className="h-4 w-4" />
-            </Button>
-          </DrawerPrimitive.Trigger>
-        </TooltipTrigger>
-        <TooltipContent>View webhook history</TooltipContent>
-      </Tooltip>
+      <DrawerPrimitive.Trigger asChild>
+        <Button variant="outline" size="sm">
+          <IconHistory className="size-4" />
+          View
+        </Button>
+      </DrawerPrimitive.Trigger>
 
       <DrawerPrimitive.Portal>
         <DrawerPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50" />

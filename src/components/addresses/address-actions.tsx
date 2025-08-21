@@ -53,9 +53,7 @@ export function AddressActions({ address }: AddressActionsProps) {
         isListening: !address.isListening,
       });
       toast.success(
-        address.isListening
-          ? "Monitoring stopped"
-          : "Monitoring started - checking for new transactions every 5 seconds",
+        address.isListening ? "Monitoring stopped" : "Monitoring started",
       );
     } catch (error) {
       if (error instanceof ConvexError) {
@@ -84,12 +82,12 @@ export function AddressActions({ address }: AddressActionsProps) {
           {address.isListening ? (
             <>
               <IconPlayerPause className="size-4" />
-              <span>Stop monitoring</span>
+              <span>Stop</span>
             </>
           ) : (
             <>
               <IconPlayerPlay className="size-4" />
-              <span>Start monitoring</span>
+              <span>Start</span>
             </>
           )}
         </DropdownMenuItem>

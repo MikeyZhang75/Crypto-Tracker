@@ -39,7 +39,7 @@ export function ResendWebhookButton({
       disabled={isLoading}
       title="Resend webhook"
     >
-      <IconRefresh className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+      <IconRefresh className={`size-4 ${isLoading ? "animate-spin" : ""}`} />
       Resend
     </Button>
   );

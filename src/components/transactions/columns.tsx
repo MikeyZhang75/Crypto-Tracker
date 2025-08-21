@@ -23,13 +23,13 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
       const shortened = `${txId.slice(0, 8)}...${txId.slice(-8)}`;
       return (
         <TooltipProvider>
-          <Tooltip>
+          <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <span className="font-mono text-xs cursor-pointer">
                 {shortened}
               </span>
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent side="top" sideOffset={5}>
               <p className="font-mono text-xs">{txId}</p>
             </TooltipContent>
           </Tooltip>
@@ -81,35 +81,13 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
       const shortened = `${address.slice(0, 6)}...${address.slice(-6)}`;
       return (
         <TooltipProvider>
-          <Tooltip>
+          <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <span className="font-mono text-xs cursor-pointer">
                 {shortened}
               </span>
             </TooltipTrigger>
-            <TooltipContent>
-              <p className="font-mono text-xs">{address}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    },
-  },
-  {
-    accessorKey: "to",
-    header: "To",
-    cell: ({ row }) => {
-      const address = row.original.to;
-      const shortened = `${address.slice(0, 6)}...${address.slice(-6)}`;
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="font-mono text-xs cursor-pointer">
-                {shortened}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent side="top" sideOffset={5}>
               <p className="font-mono text-xs">{address}</p>
             </TooltipContent>
           </Tooltip>
@@ -128,13 +106,13 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
 
       return (
         <TooltipProvider>
-          <Tooltip>
+          <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <span className="text-muted-foreground cursor-pointer">
                 {relativeTime}
               </span>
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent side="top" sideOffset={5}>
               <p>{formattedDate}</p>
             </TooltipContent>
           </Tooltip>
@@ -165,7 +143,7 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
   {
     id: "actions",
     cell: ({ row }) => (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         <WebhookHistoryDrawer transactionId={row.original._id} />
         <ResendWebhookButton transactionId={row.original._id} />
       </div>

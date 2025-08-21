@@ -7,15 +7,13 @@ import { columns } from "@/components/transactions/columns";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
-
 export default function AddressTransactionsPage() {
   const params = useParams();
-  const addressId = params.id as Id<"addresses">;
+  const address = decodeURIComponent(params.address as string);
   const router = useRouter();
   // Get transactions for this address
-  const transactions = useQuery(api.transactions.listByAddress, {
-    addressId,
+  const transactions = useQuery(api.transactions.listByAddressString, {
+    address,
   });
 
   return (

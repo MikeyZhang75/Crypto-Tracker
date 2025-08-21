@@ -1,5 +1,29 @@
-export type CryptoType = "btc" | "usdt" | "ltc";
+// Define the array with const assertion for literal types
+export const CRYPTO_INFO = [
+  {
+    name: "Bitcoin",
+    symbol: "BTC",
+    placeholder: "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa or bc1...",
+    color: "bg-orange-500",
+  },
+  {
+    name: "Tether",
+    symbol: "USDT",
+    placeholder: "0x... (ERC-20) or T... (TRC-20)",
+    color: "bg-green-500",
+  },
+  {
+    name: "Litecoin",
+    symbol: "LTC",
+    placeholder: "L... or M... or ltc1...",
+    color: "bg-gray-500",
+  },
+] as const;
 
+// Derive CryptoType as a union of literal types: "BTC" | "USDT" | "LTC"
+export type CryptoType = (typeof CRYPTO_INFO)[number]["symbol"];
+
+// Define CryptoInfo interface based on the actual array structure
 export interface CryptoInfo {
   name: string;
   symbol: CryptoType;
@@ -7,35 +31,18 @@ export interface CryptoInfo {
   color: string;
 }
 
-export const CRYPTO_INFO: Record<CryptoType, CryptoInfo> = {
-  btc: {
-    name: "Bitcoin",
-    symbol: "btc",
-    placeholder: "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa or bc1...",
-    color: "bg-orange-500",
-  },
-  usdt: {
-    name: "Tether",
-    symbol: "usdt",
-    placeholder: "0x... (ERC-20) or T... (TRC-20)",
-    color: "bg-green-500",
-  },
-  ltc: {
-    name: "Litecoin",
-    symbol: "ltc",
-    placeholder: "L... or M... or ltc1...",
-    color: "bg-gray-500",
-  },
-};
+// Helper function to get crypto info by symbol
+export function getCryptoInfo(symbol: CryptoType): CryptoInfo | undefined {
+  return CRYPTO_INFO.find((info) => info.symbol === symbol) as
+    | CryptoInfo
+    | undefined;
+}
 
-export const CRYPTO_OPTIONS = Object.entries(CRYPTO_INFO).map(
-  ([key, info]) => ({
-    value: key,
-    symbol: info.symbol,
-    name: info.name,
-  }),
-);
+export const CRYPTO_OPTIONS = CRYPTO_INFO.map((info) => ({
+  value: info.symbol,
+  symbol: info.symbol,
+  name: info.name,
+}));
 
-export const CRYPTO_SYMBOLS = Object.values(CRYPTO_INFO).map(
-  (info) => info.symbol,
-);
+// Create a properly typed array of symbols
+export const CRYPTO_SYMBOLS = CRYPTO_INFO.map((info) => info.symbol);

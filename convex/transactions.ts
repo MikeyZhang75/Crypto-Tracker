@@ -56,6 +56,47 @@ export const listByAddress = query({
   },
 });
 
+// Public query to list transactions by address string
+export const listByAddressString = query({
+  args: {
+    address: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError({
+        code: "UNAUTHORIZED",
+        message: "You must be authenticated to view transactions",
+      });
+    }
+
+    // Find the address by string
+    const addressRecord = await ctx.db
+      .query("addresses")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("address"), args.address))
+      .first();
+
+    if (!addressRecord) {
+      throw new ConvexError({
+        code: "NOT_FOUND",
+        message: "Address not found",
+      });
+    }
+
+    // Get all transactions for this address, ordered by timestamp descending
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_address_and_timestamp", (q) =>
+        q.eq("addressId", addressRecord._id),
+      )
+      .order("desc")
+      .collect();
+
+    return transactions;
+  },
+});
+
 // Public mutation to resend webhook for a transaction
 export const resendWebhook = mutation({
   args: {

@@ -74,7 +74,7 @@ export const columns: ColumnDef<Doc<"addresses">>[] = [
     header: "Actions",
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
-        <Link href={`/addresses/${row.original._id}/transactions`}>
+        <Link href={`/addresses/${encodeURIComponent(row.original.address)}/transactions`}>
           <Button variant="outline" size="sm">
             <IconExternalLink className="size-4" />
             View

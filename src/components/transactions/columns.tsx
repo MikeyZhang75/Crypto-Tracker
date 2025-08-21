@@ -124,7 +124,7 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
           <Badge variant="outline" className="gap-1.5">
             <span
               className={`size-1.5 rounded-full ${
-                sent ? "bg-emerald-500" : "bg-gray-400"
+                sent ? "bg-emerald-500" : "bg-yellow-500"
               }`}
               aria-hidden="true"
             />

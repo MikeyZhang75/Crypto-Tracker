@@ -35,7 +35,7 @@ export function ThemeToggle() {
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton>
+            <SidebarMenuButton className="cursor-pointer">
               {getIcon()}
               <span>{getLabel()}</span>
             </SidebarMenuButton>

@@ -16,7 +16,7 @@ export function ResendWebhookButton({
   transactionId,
 }: ResendWebhookButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const resendWebhook = useMutation(api.webhooks.resendWebhook);
+  const resendWebhook = useMutation(api.webhooks.resend);
 
   const handleResend = async () => {
     setIsLoading(true);

@@ -18,7 +18,9 @@ export default function AddressesPage() {
       <DataTable
         columns={columns}
         data={addresses || []}
-        getRowUrl={(row) => `/addresses/${encodeURIComponent(row.address)}/transactions`}
+        getRowUrl={(row) =>
+          `/addresses/${encodeURIComponent(row.address)}/transactions`
+        }
       />
     </>
   );

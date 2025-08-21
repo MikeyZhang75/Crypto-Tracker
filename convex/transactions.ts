@@ -6,55 +6,12 @@ import {
   internalAction,
   internalMutation,
   internalQuery,
-  mutation,
   query,
 } from "./_generated/server";
+import type { TronGridTRC20Response } from "./types";
 
 // USDT contract address on Tron mainnet
 const USDT_CONTRACT_ADDRESS = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
-
-// Public query to list transactions by address
-export const listByAddress = query({
-  args: {
-    addressId: v.id("addresses"),
-  },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new ConvexError({
-        code: "UNAUTHORIZED",
-        message: "You must be authenticated to view transactions",
-      });
-    }
-
-    // Verify the address belongs to the user
-    const address = await ctx.db.get(args.addressId);
-    if (!address) {
-      throw new ConvexError({
-        code: "NOT_FOUND",
-        message: "Address not found",
-      });
-    }
-
-    if (address.userId !== userId) {
-      throw new ConvexError({
-        code: "FORBIDDEN",
-        message: "You don't have permission to view these transactions",
-      });
-    }
-
-    // Get all transactions for this address, ordered by timestamp descending
-    const transactions = await ctx.db
-      .query("transactions")
-      .withIndex("by_address_and_timestamp", (q) =>
-        q.eq("addressId", args.addressId),
-      )
-      .order("desc")
-      .collect();
-
-    return transactions;
-  },
-});
 
 // Public query to list transactions by address string
 export const listByAddressString = query({
@@ -96,34 +53,6 @@ export const listByAddressString = query({
     return transactions;
   },
 });
-
-
-// Type definition for TronGrid API response
-interface TronGridTRC20Response {
-  data: Array<{
-    transaction_id: string;
-    token_info: {
-      symbol: string;
-      address: string;
-      decimals: number;
-      name: string;
-    };
-    block_timestamp: number;
-    from: string;
-    to: string;
-    type: string;
-    value: string;
-  }>;
-  success: boolean;
-  meta: {
-    at: number;
-    page_size: number;
-    fingerprint?: string;
-    links?: {
-      next?: string;
-    };
-  };
-}
 
 // Helper function to fetch Tron USDT incoming transfers using TronGrid API
 async function fetchTronUSDTTransfers(address: string, lastTimestamp = 0) {
@@ -306,7 +235,7 @@ export const storeTransactionsAndReschedule = internalMutation({
 
     // Schedule webhook calls for new transactions
     for (const { _id } of newTransactionIds) {
-      await ctx.scheduler.runAfter(0, internal.webhooks.sendWebhook, {
+      await ctx.scheduler.runAfter(0, internal.webhooks.send, {
         transactionId: _id,
       });
     }
@@ -347,10 +276,3 @@ export const processTransactionFetch = internalAction({
     );
   },
 });
-
-
-
-
-
-
-

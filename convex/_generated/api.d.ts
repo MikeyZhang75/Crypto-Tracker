@@ -17,6 +17,7 @@ import type * as addresses from "../addresses.js";
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
 import type * as transactions from "../transactions.js";
+import type * as types from "../types.js";
 import type * as users from "../users.js";
 import type * as webhooks from "../webhooks.js";
 
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   http: typeof http;
   transactions: typeof transactions;
+  types: typeof types;
   users: typeof users;
   webhooks: typeof webhooks;
 }>;

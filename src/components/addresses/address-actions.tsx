@@ -71,31 +71,34 @@ export function AddressActions({ address }: AddressActionsProps) {
   };
 
   return (
-    <div className="flex items-center gap-1">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <IconDots className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuItem onClick={handleToggleMonitoring}>
-            {address.isListening ? (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <IconDots className="h-4 w-4" />
+          <span className="sr-only">Open menu</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuItem onClick={handleToggleMonitoring}>
+          {address.isListening ? (
+            <>
               <IconPlayerPause className="size-4" />
-            ) : (
+              <span>Stop monitoring</span>
+            </>
+          ) : (
+            <>
               <IconPlayerPlay className="size-4" />
-            )}
-            {address.isListening ? "Stop monitoring" : "Start monitoring"}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onClick={handleDelete}>
-            <IconTrash className="h-4 w-4" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+              <span>Start monitoring</span>
+            </>
+          )}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onClick={handleDelete}>
+          <IconTrash className="h-4 w-4" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

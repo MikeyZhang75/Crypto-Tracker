@@ -106,7 +106,7 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
                 {relativeTime}
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={5}>
+            <TooltipContent>
               <p>{formattedDate}</p>
             </TooltipContent>
           </Tooltip>

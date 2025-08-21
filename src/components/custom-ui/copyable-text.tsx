@@ -46,7 +46,7 @@ export function CopyableText({
 
   return (
     <TooltipProvider>
-      <Tooltip>
+      <Tooltip delayDuration={0}>
         <TooltipTrigger asChild>
           <button
             type="button"

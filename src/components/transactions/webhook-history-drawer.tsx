@@ -14,7 +14,7 @@ import {
 import { useQuery } from "convex/react";
 import { formatDistanceToNow } from "date-fns";
 import Prism from "prismjs";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "prismjs/components/prism-json";
 import { Drawer as DrawerPrimitive } from "vaul";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +26,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
+import type { Doc, Id } from "@/convex/_generated/dataModel";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 interface WebhookHistoryDrawerProps {
@@ -38,7 +39,7 @@ export function WebhookHistoryDrawer({
 }: WebhookHistoryDrawerProps) {
   const [open, setOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
 
   // Fetch webhook logs when drawer opens
   const webhookLogs = useQuery(
@@ -46,45 +47,29 @@ export function WebhookHistoryDrawer({
     open ? { transactionId } : "skip",
   );
 
-  // Check for mobile on mount and resize
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  // Auto-select first log on desktop when logs are loaded
-  useEffect(() => {
-    if (!isMobile && webhookLogs && webhookLogs.length > 0 && !selectedLog) {
-      setSelectedLog(webhookLogs[0]._id);
-    }
-  }, [webhookLogs, isMobile, selectedLog]);
-
-  const getStatusColor = (status: "success" | "failed" | "pending") => {
-    switch (status) {
-      case "success":
-        return "text-emerald-500 bg-emerald-500/10 border-emerald-500/20";
-      case "failed":
-        return "text-red-500 bg-red-500/10 border-red-500/20";
-      case "pending":
-        return "text-yellow-500 bg-yellow-500/10 border-yellow-500/20";
-    }
+  const WEBHOOK_STATUS_STYLES: Record<
+    Doc<"webhookLogs">["status"],
+    { color: string; status_color: string; icon: string }
+  > = {
+    success: {
+      color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+      status_color: "bg-emerald-500",
+      icon: "✓",
+    },
+    failed: {
+      color: "text-red-500 bg-red-500/10 border-red-500/20",
+      status_color: "bg-red-500",
+      icon: "✗",
+    },
+    pending: {
+      color: "text-yellow-500 bg-yellow-500/10 border-yellow-500/20",
+      status_color: "bg-yellow-500",
+      icon: "○",
+    },
   };
 
-  const getStatusIcon = (status: "success" | "failed" | "pending") => {
-    switch (status) {
-      case "success":
-        return "✓";
-      case "failed":
-        return "✗";
-      case "pending":
-        return "○";
-    }
+  const getStatusStyle = (status: Doc<"webhookLogs">["status"]) => {
+    return WEBHOOK_STATUS_STYLES[status];
   };
 
   const formatJson = (jsonString: string) => {
@@ -249,14 +234,13 @@ export function WebhookHistoryDrawer({
                                   variant="outline"
                                   className={cn(
                                     "h-5 px-1.5 text-[10px] font-medium",
-                                    getStatusColor(log.status),
+                                    getStatusStyle(log.status).color,
                                   )}
                                 >
-                                  <span className="mr-1">
-                                    {getStatusIcon(log.status)}
+                                  <span>{getStatusStyle(log.status).icon}</span>
+                                  <span className="text-xs font-medium">
+                                    {log.status.toUpperCase()}
                                   </span>
-                                  {log.status.toUpperCase()}
-                                  {log.statusCode && ` (${log.statusCode})`}
                                 </Badge>
                                 <span className="text-xs font-medium text-muted-foreground">
                                   #{log.attemptNumber}
@@ -323,20 +307,17 @@ export function WebhookHistoryDrawer({
                           )}
 
                           {/* Status Header */}
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-3">
-                              <Badge
-                                variant="outline"
-                                className={cn(
-                                  "px-3 py-1",
-                                  getStatusColor(log.status),
-                                )}
-                              >
-                                <span className="mr-1.5">
-                                  {getStatusIcon(log.status)}
-                                </span>
-                                {log.status.toUpperCase()}
-                                {log.statusCode && ` (${log.statusCode})`}
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <Badge variant="outline" className="gap-1.5">
+                                <span
+                                  className={cn(
+                                    "size-1.5 rounded-full",
+                                    getStatusStyle(log.status).status_color,
+                                  )}
+                                  aria-hidden="true"
+                                />
+                                {log.statusCode && `${log.statusCode}`}
                               </Badge>
                               <Badge variant="outline" className="font-mono">
                                 Attempt #{log.attemptNumber}

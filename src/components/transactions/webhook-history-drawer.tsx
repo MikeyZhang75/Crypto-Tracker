@@ -48,22 +48,24 @@ export function WebhookHistoryDrawer({
 
   const WEBHOOK_STATUS_STYLES: Record<
     Doc<"webhookLogs">["status"],
-    { color: string; status_color: string; icon: string }
+    { color: string; status_color: string; icon: React.ReactNode }
   > = {
     success: {
       color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
       status_color: "bg-emerald-500",
-      icon: "✓",
+      icon: <IconCheck className="h-3 w-3" />,
     },
     failed: {
       color: "text-red-500 bg-red-500/10 border-red-500/20",
       status_color: "bg-red-500",
-      icon: "✗",
+      icon: <IconX className="h-3 w-3" />,
     },
     pending: {
       color: "text-yellow-500 bg-yellow-500/10 border-yellow-500/20",
       status_color: "bg-yellow-500",
-      icon: "○",
+      icon: (
+        <IconLoader2 className="h-3 w-3 animate-[spin_2s_linear_infinite]" />
+      ),
     },
   };
 
@@ -238,12 +240,12 @@ export function WebhookHistoryDrawer({
                           )}
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0 space-y-1">
+                            <div className="flex-1 space-y-1">
                               <div className="flex items-center gap-2">
                                 <Badge
                                   variant="outline"
                                   className={cn(
-                                    "h-5 px-1.5 text-[10px] font-medium",
+                                    "h-5 px-1.5 text-xs font-medium",
                                     getStatusStyle(log.status).color,
                                   )}
                                 >
@@ -302,7 +304,7 @@ export function WebhookHistoryDrawer({
                       const formattedDate = sentDate.toLocaleString();
 
                       return (
-                        <div className="p-6 space-y-6 min-w-0 overflow-hidden">
+                        <div className="p-6 space-y-6">
                           {/* Mobile back button */}
                           {isMobile && (
                             <div className="pb-4">
@@ -341,7 +343,7 @@ export function WebhookHistoryDrawer({
                           </div>
 
                           {/* Webhook URL */}
-                          <div className="space-y-2 min-w-0">
+                          <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <h3 className="text-sm font-medium flex items-center gap-2">
                                 <IconExternalLink className="h-4 w-4" />
@@ -370,7 +372,7 @@ export function WebhookHistoryDrawer({
 
                           {/* Error Message */}
                           {log.errorMessage && (
-                            <div className="space-y-2 min-w-0">
+                            <div className="space-y-2">
                               <h3 className="text-sm font-medium text-red-500">
                                 Error Message
                               </h3>
@@ -383,7 +385,7 @@ export function WebhookHistoryDrawer({
                           )}
 
                           {/* Request Payload */}
-                          <div className="space-y-2 min-w-0">
+                          <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <h3 className="text-sm font-medium flex items-center gap-2">
                                 <IconCode className="h-4 w-4" />
@@ -420,7 +422,7 @@ export function WebhookHistoryDrawer({
 
                           {/* Response Body */}
                           {log.responseBody && (
-                            <div className="space-y-2 min-w-0">
+                            <div className="space-y-2">
                               <div className="flex items-center justify-between">
                                 <h3 className="text-sm font-medium flex items-center gap-2">
                                   <IconCode className="h-4 w-4" />

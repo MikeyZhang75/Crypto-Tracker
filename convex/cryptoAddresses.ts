@@ -207,6 +207,19 @@ export const remove = mutation({
       });
     }
 
+    // Delete all transactions associated with this address
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_address", (q) => q.eq("addressId", args.id))
+      .collect();
+
+    for (const transaction of transactions) {
+      await ctx.db.delete(transaction._id);
+    }
+
+    // Delete the address itself
+    // Note: Any running scheduled functions will automatically stop
+    // when they detect the address no longer exists
     return await ctx.db.delete(args.id);
   },
 });

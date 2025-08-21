@@ -40,6 +40,28 @@ const schema = defineSchema({
     .index("by_user", ["userId"])
     .index("by_timestamp", ["timestamp"])
     .index("by_address_and_timestamp", ["addressId", "timestamp"]),
+
+  webhookLogs: defineTable({
+    transactionId: v.id("transactions"),
+    addressId: v.id("addresses"),
+    userId: v.id("users"),
+    webhookUrl: v.string(),
+    status: v.union(
+      v.literal("success"),
+      v.literal("failed"),
+      v.literal("pending"),
+    ),
+    statusCode: v.optional(v.number()),
+    errorMessage: v.optional(v.string()),
+    requestPayload: v.string(), // JSON string of the payload
+    responseBody: v.optional(v.string()), // JSON string of the response
+    attemptNumber: v.number(),
+    sentAt: v.number(),
+  })
+    .index("by_transaction", ["transactionId"])
+    .index("by_address", ["addressId"])
+    .index("by_user", ["userId"])
+    .index("by_sent_at", ["sentAt"]),
 });
 
 export default schema;

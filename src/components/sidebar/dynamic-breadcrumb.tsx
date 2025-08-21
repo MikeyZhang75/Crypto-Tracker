@@ -31,7 +31,18 @@ function generateBreadcrumbs(pathname: string) {
   cleanSegments.forEach((segment, index) => {
     const isLast = index === cleanSegments.length - 1;
     const href = `/${cleanSegments.slice(0, index + 1).join("/")}`;
-    const label = segment.charAt(0).toUpperCase() + segment.slice(1);
+    
+    // Format the label - handle long IDs by truncating them
+    let label = segment;
+    
+    // Check if this looks like an ID (long alphanumeric string)
+    if (segment.length > 20 && /^[a-z0-9]+$/i.test(segment)) {
+      // Show first 6 and last 4 characters with ellipsis
+      label = `${segment.slice(0, 6)}...${segment.slice(-4)}`;
+    } else {
+      // Regular formatting for non-ID segments
+      label = segment.charAt(0).toUpperCase() + segment.slice(1);
+    }
 
     breadcrumbs.push({
       label,

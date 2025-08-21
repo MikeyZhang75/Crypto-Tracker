@@ -29,8 +29,17 @@ export function EditableLabelCell({ address }: EditableLabelCellProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Only update if value has changed
-    if (value === (address.label || "")) {
+    const trimmedValue = value.trim();
+
+    // Check if the value actually changed
+    // If trimmedValue is empty and label exists (even if empty string), we want to update to undefined
+    // If trimmedValue has content and it's different from label, we want to update
+    const shouldUpdate = trimmedValue
+      ? trimmedValue !== address.label
+      : // Has value: update if different
+        address.label !== undefined; // Empty: update only if label exists
+
+    if (!shouldUpdate) {
       setIsDirty(false);
       return;
     }
@@ -38,8 +47,9 @@ export function EditableLabelCell({ address }: EditableLabelCellProps) {
     try {
       await updateAddress({
         id: address._id,
-        label: value || undefined,
+        label: trimmedValue || undefined,
       });
+
       toast.success("Label updated successfully");
       setIsDirty(false);
     } catch (error) {
@@ -69,7 +79,7 @@ export function EditableLabelCell({ address }: EditableLabelCellProps) {
   };
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit}>
+    <form ref={formRef} onSubmit={handleSubmit} className="max-w-32">
       <Label htmlFor={`${address._id}-label`} className="sr-only">
         Label
       </Label>

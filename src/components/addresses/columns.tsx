@@ -38,11 +38,6 @@ export const columns: ColumnDef<Doc<"addresses">>[] = [
     ),
   },
   {
-    accessorKey: "label",
-    header: () => <div className="ml-3">Label</div>,
-    cell: ({ row }) => <EditableLabelCell address={row.original} />,
-  },
-  {
     accessorKey: "isListening",
     header: () => <div className="text-center">Monitoring</div>,
     cell: ({ row }) => (
@@ -52,12 +47,13 @@ export const columns: ColumnDef<Doc<"addresses">>[] = [
     ),
   },
   {
+    accessorKey: "label",
+    header: () => <div className="ml-3">Label</div>,
+    cell: ({ row }) => <EditableLabelCell address={row.original} />,
+  },
+  {
     id: "actions",
-    header: () => <div className="text-right">Actions</div>,
-    cell: ({ row }) => (
-      <div className="text-right">
-        <AddressActions address={row.original} />
-      </div>
-    ),
+    header: "Actions",
+    cell: ({ row }) => <AddressActions address={row.original} />,
   },
 ];

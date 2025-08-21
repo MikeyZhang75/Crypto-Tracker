@@ -1,28 +1,22 @@
 "use client";
 
-import { IconExternalLink, IconWebhook } from "@tabler/icons-react";
+import { IconExternalLink } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { TokenIcon } from "@web3icons/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { Doc } from "@/convex/_generated/dataModel";
-
+import { Badge } from "../ui/badge";
 import { AddressActions } from "./address-actions";
 import { EditableLabelCell } from "./editable-label-cell";
-import { ListeningToggle } from "./listening-toggle";
 
 export const columns: ColumnDef<Doc<"addresses">>[] = [
-  {
-    id: "index",
-    header: "ID",
-    cell: ({ row }) => row.original._id.toString().slice(-8),
-  },
   {
     accessorKey: "cryptoType",
     header: "Coin",
     cell: ({ row }) => {
       return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <TokenIcon
             symbol={row.original.cryptoType}
             variant="branded"
@@ -36,18 +30,31 @@ export const columns: ColumnDef<Doc<"addresses">>[] = [
   {
     accessorKey: "address",
     header: "Address",
-    cell: ({ row }) => (
-      <span className="font-mono text-sm">{row.getValue("address")}</span>
-    ),
+    cell: ({ row }) => {
+      const address = row.original.address;
+      return <span className="font-mono text-sm">{address}</span>;
+    },
   },
   {
     accessorKey: "isListening",
-    header: () => <div className="text-center">Monitoring</div>,
-    cell: ({ row }) => (
-      <div className="text-center">
-        <ListeningToggle address={row.original} />
-      </div>
-    ),
+    header: "Monitoring",
+    cell: ({ row }) => {
+      const isListening = row.original.isListening;
+      return (
+        <Badge
+          variant="outline"
+          className={`gap-1.5 ${isListening ? "" : "opacity-50"}`}
+        >
+          <span
+            className={`size-1.5 rounded-full ${
+              isListening ? "bg-emerald-500" : "bg-gray-400"
+            }`}
+            aria-hidden="true"
+          />
+          {isListening ? "Active" : "Inactive"}
+        </Badge>
+      );
+    },
   },
   {
     accessorKey: "label",
@@ -56,31 +63,25 @@ export const columns: ColumnDef<Doc<"addresses">>[] = [
   },
   {
     accessorKey: "webhookUrl",
-    header: () => <div className="text-center">Webhook</div>,
-    cell: () => (
-      <div className="flex justify-center">
-        <div className="flex items-center gap-1">
-          <IconWebhook className="h-4 w-4 text-green-500" />
-          <span className="text-xs text-muted-foreground">Active</span>
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: "transactions",
-    header: "Transactions",
-    cell: ({ row }) => (
-      <Link href={`/addresses/${row.original._id}/transactions`}>
-        <Button variant="ghost" size="sm">
-          View
-          <IconExternalLink className="ml-1 h-3 w-3" />
-        </Button>
-      </Link>
-    ),
+    header: "Webhook",
+    cell: ({ row }) => {
+      const webhookUrl = row.original.webhookUrl;
+      return <span className="font-mono text-xs">{webhookUrl}</span>;
+    },
   },
   {
     id: "actions",
     header: "Actions",
-    cell: ({ row }) => <AddressActions address={row.original} />,
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        <Link href={`/addresses/${row.original._id}/transactions`}>
+          <Button variant="outline" size="sm">
+            <IconExternalLink className="size-4" />
+            View
+          </Button>
+        </Link>
+        <AddressActions address={row.original} />
+      </div>
+    ),
   },
 ];

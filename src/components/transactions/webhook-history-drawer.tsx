@@ -1,10 +1,12 @@
 "use client";
 
 import {
+  IconCheck,
   IconChevronLeft,
   IconChevronRight,
   IconClock,
   IconCode,
+  IconCopy,
   IconExternalLink,
   IconHistory,
   IconLoader2,
@@ -39,6 +41,7 @@ export function WebhookHistoryDrawer({
 }: WebhookHistoryDrawerProps) {
   const [open, setOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<string | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
   // Fetch webhook logs when drawer opens
@@ -78,6 +81,16 @@ export function WebhookHistoryDrawer({
       return JSON.stringify(parsed, null, 2);
     } catch {
       return jsonString;
+    }
+  };
+
+  const handleCopy = async (text: string, fieldName: string) => {
+    try {
+      await navigator.clipboard.writeText(formatJson(text));
+      setCopiedField(fieldName);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
     }
   };
 
@@ -121,7 +134,7 @@ export function WebhookHistoryDrawer({
     };
 
     return (
-      <pre className="p-3 text-xs font-mono whitespace-pre-wrap break-all overflow-hidden">
+      <pre className="p-3 text-xs font-mono whitespace-pre-wrap break-all">
         {tokens.map((token, index) => renderToken(token, index))}
       </pre>
     );
@@ -156,7 +169,9 @@ export function WebhookHistoryDrawer({
         >
           {/* Handle bar for mobile */}
           {isMobile && (
-            <div className="mx-auto mt-4 h-2 w-[100px] shrink-0 rounded-full bg-muted" />
+            <div className="flex w-full justify-center py-4">
+              <div className="h-2 w-[100px] shrink-0 rounded-full bg-muted" />
+            </div>
           )}
 
           {/* Header */}
@@ -182,7 +197,7 @@ export function WebhookHistoryDrawer({
           </div>
 
           {/* Content */}
-          <div className="flex flex-1 overflow-hidden">
+          <div className="flex flex-1 overflow-hidden" data-vaul-no-drag>
             {/* Log List - hidden on mobile when a log is selected */}
             <div
               className={cn(
@@ -201,8 +216,8 @@ export function WebhookHistoryDrawer({
                       <IconLoader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                     </div>
                   ) : webhookLogs.length === 0 ? (
-                    <div className="text-center py-8">
-                      <IconWebhook className="mx-auto h-8 w-8 text-muted-foreground/50 mb-2" />
+                    <div className="flex flex-col items-center gap-2 py-8">
+                      <IconWebhook className="h-8 w-8 text-muted-foreground/50" />
                       <p className="text-sm text-muted-foreground">
                         No webhook attempts yet
                       </p>
@@ -228,8 +243,8 @@ export function WebhookHistoryDrawer({
                           )}
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
+                            <div className="flex-1 min-w-0 space-y-1">
+                              <div className="flex items-center gap-2">
                                 <Badge
                                   variant="outline"
                                   className={cn(
@@ -264,7 +279,7 @@ export function WebhookHistoryDrawer({
                           </div>
 
                           {log.errorMessage && (
-                            <div className="mt-2 text-xs text-red-500 line-clamp-2">
+                            <div className="text-xs text-red-500 line-clamp-2 pt-2">
                               {log.errorMessage}
                             </div>
                           )}
@@ -295,15 +310,16 @@ export function WebhookHistoryDrawer({
                         <div className="p-6 space-y-6 min-w-0 overflow-hidden">
                           {/* Mobile back button */}
                           {isMobile && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setSelectedLog(null)}
-                              className="mb-4"
-                            >
-                              <IconChevronLeft className="h-4 w-4 mr-2" />
-                              Back to list
-                            </Button>
+                            <div className="pb-4">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedLog(null)}
+                              >
+                                <IconChevronLeft className="h-4 w-4" />
+                                Back to list
+                              </Button>
+                            </div>
                           )}
 
                           {/* Status Header */}
@@ -331,18 +347,15 @@ export function WebhookHistoryDrawer({
 
                           {/* Webhook URL */}
                           <div className="space-y-2 min-w-0">
-                            <h3 className="text-sm font-medium flex items-center gap-2">
-                              <IconExternalLink className="h-4 w-4" />
-                              Webhook URL
-                            </h3>
-                            <div className="flex items-center gap-2 min-w-0">
-                              <code className="flex-1 min-w-0 rounded-md bg-muted px-3 py-2 text-xs font-mono break-all">
-                                {log.webhookUrl}
-                              </code>
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-sm font-medium flex items-center gap-2">
+                                <IconExternalLink className="h-4 w-4" />
+                                Webhook URL
+                              </h3>
                               <Button
                                 variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 flex-shrink-0"
+                                size="sm"
+                                className="h-7 px-2 text-xs"
                                 asChild
                               >
                                 <a
@@ -350,10 +363,14 @@ export function WebhookHistoryDrawer({
                                   target="_blank"
                                   rel="noopener noreferrer"
                                 >
-                                  <IconExternalLink className="h-4 w-4" />
+                                  <IconExternalLink className="h-3 w-3" />
+                                  Open
                                 </a>
                               </Button>
                             </div>
+                            <code className="block rounded-md bg-muted px-3 py-2 text-xs font-mono break-all">
+                              {log.webhookUrl}
+                            </code>
                           </div>
 
                           {/* Error Message */}
@@ -372,10 +389,32 @@ export function WebhookHistoryDrawer({
 
                           {/* Request Payload */}
                           <div className="space-y-2 min-w-0">
-                            <h3 className="text-sm font-medium flex items-center gap-2">
-                              <IconCode className="h-4 w-4" />
-                              Request Payload
-                            </h3>
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-sm font-medium flex items-center gap-2">
+                                <IconCode className="h-4 w-4" />
+                                Request Payload
+                              </h3>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleCopy(log.requestPayload, "request")
+                                }
+                                className="h-7 px-2 text-xs"
+                              >
+                                {copiedField === "request" ? (
+                                  <>
+                                    <IconCheck className="h-3 w-3" />
+                                    Copied
+                                  </>
+                                ) : (
+                                  <>
+                                    <IconCopy className="h-3 w-3" />
+                                    Copy
+                                  </>
+                                )}
+                              </Button>
+                            </div>
                             <div className="relative rounded-md bg-muted/50 border overflow-hidden">
                               <ScrollArea className="max-h-64 w-full">
                                 <JsonHighlight content={log.requestPayload} />
@@ -387,10 +426,35 @@ export function WebhookHistoryDrawer({
                           {/* Response Body */}
                           {log.responseBody && (
                             <div className="space-y-2 min-w-0">
-                              <h3 className="text-sm font-medium flex items-center gap-2">
-                                <IconCode className="h-4 w-4" />
-                                Response Body
-                              </h3>
+                              <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-medium flex items-center gap-2">
+                                  <IconCode className="h-4 w-4" />
+                                  Response Body
+                                </h3>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleCopy(
+                                      log.responseBody || "",
+                                      "response",
+                                    )
+                                  }
+                                  className="h-7 px-2 text-xs"
+                                >
+                                  {copiedField === "response" ? (
+                                    <>
+                                      <IconCheck className="h-3 w-3" />
+                                      Copied
+                                    </>
+                                  ) : (
+                                    <>
+                                      <IconCopy className="h-3 w-3" />
+                                      Copy
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
                               <div className="relative rounded-md bg-muted/50 border overflow-hidden">
                                 <ScrollArea className="max-h-64 w-full">
                                   <JsonHighlight content={log.responseBody} />
@@ -406,8 +470,8 @@ export function WebhookHistoryDrawer({
                   </ScrollArea>
                 ) : (
                   <div className="flex h-full items-center justify-center">
-                    <div className="text-center">
-                      <IconWebhook className="mx-auto h-8 w-8 text-muted-foreground/30 mb-2" />
+                    <div className="flex flex-col items-center gap-2">
+                      <IconWebhook className="h-8 w-8 text-muted-foreground/30" />
                       <p className="text-sm text-muted-foreground">
                         Select a webhook attempt to view details
                       </p>

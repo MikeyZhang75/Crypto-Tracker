@@ -51,7 +51,7 @@ export function AddressActions({ address }: AddressActionsProps) {
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleDelete}>
+        <DropdownMenuItem variant="destructive" onClick={handleDelete}>
           <IconTrash className="h-4 w-4" />
           Delete
         </DropdownMenuItem>

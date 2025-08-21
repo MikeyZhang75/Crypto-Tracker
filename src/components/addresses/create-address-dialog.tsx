@@ -30,63 +30,39 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
-import { CRYPTO_INFO, type CryptoType } from "@/lib/constants";
+import { CRYPTO_INFO, CRYPTO_SYMBOLS, type CryptoType } from "@/lib/constants";
+import { validateCryptoAddress } from "@/lib/validator";
 
-// Validation functions for crypto addresses
-const validateBtcAddress = (address: string) => {
-  return (
-    /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address) ||
-    /^bc1[a-z0-9]{39,59}$/.test(address)
-  );
-};
-
-const validateLtcAddress = (address: string) => {
-  return (
-    /^[LM][a-km-zA-HJ-NP-Z1-9]{26,33}$/.test(address) ||
-    /^ltc1[a-z0-9]{39,59}$/.test(address)
-  );
-};
-
-const validateUsdtAddress = (address: string) => {
-  return (
-    /^0x[a-fA-F0-9]{40}$/.test(address) || /^T[a-zA-Z0-9]{33}$/.test(address)
-  );
-};
-
-// Form schema with dynamic validation based on crypto type
-const createFormSchema = (cryptoType: CryptoType) => {
-  return z.object({
-    cryptoType: z.enum(["btc", "usdt", "ltc"]),
-    address: z
-      .string()
-      .min(1, "Address is required")
-      .refine(
-        (address) => {
-          switch (cryptoType) {
-            case "btc":
-              return validateBtcAddress(address);
-            case "ltc":
-              return validateLtcAddress(address);
-            case "usdt":
-              return validateUsdtAddress(address);
-            default:
-              return false;
-          }
-        },
-        {
-          message: `Invalid ${cryptoType.toUpperCase()} address format`,
-        },
-      ),
+// Form schema with dynamic validation based on selected crypto type
+const formSchema = z
+  .object({
+    cryptoType: z.enum(CRYPTO_SYMBOLS),
+    address: z.string().min(1, "Address is required"),
     label: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    // Validate address based on selected crypto type
+    const { cryptoType, address } = data;
+
+    if (address) {
+      const isValid = validateCryptoAddress(cryptoType, address);
+
+      if (!isValid) {
+        ctx.addIssue({
+          code: "custom",
+          message: `Invalid ${cryptoType.toUpperCase()} address format`,
+          path: ["address"],
+        });
+      }
+    }
   });
-};
 
 export function CreateAddressDialog() {
   const [open, setOpen] = useState(false);
   const addAddress = useMutation(api.cryptoAddresses.add);
 
-  const form = useForm<z.infer<ReturnType<typeof createFormSchema>>>({
-    resolver: zodResolver(createFormSchema("btc")),
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       cryptoType: "btc",
       address: "",
@@ -97,18 +73,20 @@ export function CreateAddressDialog() {
   // Watch the cryptoType field to update validation schema
   const watchedCryptoType = form.watch("cryptoType");
 
-  // Update resolver when crypto type changes
+  // Handle crypto type changes
   const handleCryptoTypeChange = (value: CryptoType) => {
     form.setValue("cryptoType", value);
     // Clear address field when crypto type changes
     form.setValue("address", "");
-    // Update the validation schema
+    // Clear any existing errors
     form.clearErrors("address");
+    // Trigger revalidation if there was a previous value
+    if (form.formState.isSubmitted) {
+      form.trigger("address");
+    }
   };
 
-  const onSubmit = async (
-    values: z.infer<ReturnType<typeof createFormSchema>>,
-  ) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       await addAddress({
         cryptoType: values.cryptoType,

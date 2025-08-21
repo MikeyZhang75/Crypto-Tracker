@@ -1,12 +1,14 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
+import { CRYPTO_SYMBOLS } from "@/lib/constants";
+import { validateCryptoAddress } from "@/lib/validator";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
 export const list = query({
   args: {
     cryptoType: v.optional(
-      v.union(v.literal("btc"), v.literal("usdt"), v.literal("ltc")),
+      v.union(...CRYPTO_SYMBOLS.map((symbol) => v.literal(symbol))),
     ),
   },
   handler: async (ctx, args) => {
@@ -34,7 +36,7 @@ export const list = query({
 
 export const add = mutation({
   args: {
-    cryptoType: v.union(v.literal("btc"), v.literal("usdt"), v.literal("ltc")),
+    cryptoType: v.union(...CRYPTO_SYMBOLS.map((symbol) => v.literal(symbol))),
     address: v.string(),
     label: v.optional(v.string()),
   },
@@ -155,40 +157,3 @@ export const remove = mutation({
     return await ctx.db.delete(args.id);
   },
 });
-
-// Utility function to validate crypto addresses
-function validateCryptoAddress(
-  type: "btc" | "usdt" | "ltc",
-  address: string,
-): boolean {
-  switch (type) {
-    case "btc":
-      // Bitcoin address validation (simplified)
-      // P2PKH: starts with 1, P2SH: starts with 3, Bech32: starts with bc1
-      return (
-        /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address) ||
-        /^bc1[a-z0-9]{39,59}$/.test(address)
-      );
-
-    case "ltc":
-      // Litecoin address validation (simplified)
-      // Legacy: starts with L or M, SegWit: starts with ltc1
-      return (
-        /^[LM][a-km-zA-HJ-NP-Z1-9]{26,33}$/.test(address) ||
-        /^ltc1[a-z0-9]{39,59}$/.test(address)
-      );
-
-    case "usdt":
-      // USDT can be on multiple chains, we'll accept common formats
-      // Ethereum/ERC-20: 0x followed by 40 hex characters
-      // TRC-20 (Tron): starts with T
-      // For simplicity, we'll accept both
-      return (
-        /^0x[a-fA-F0-9]{40}$/.test(address) ||
-        /^T[a-zA-Z0-9]{33}$/.test(address)
-      );
-
-    default:
-      return false;
-  }
-}

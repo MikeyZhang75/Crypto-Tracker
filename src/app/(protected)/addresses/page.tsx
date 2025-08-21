@@ -11,24 +11,11 @@ export default function AddressesPage() {
 
   return (
     <>
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Crypto Address Management</h1>
+      <div className="flex justify-end">
         <CreateAddressDialog />
       </div>
 
-      {addresses ? (
-        <DataTable
-          columns={columns}
-          data={addresses}
-          emptyMessage="No addresses added yet. Click 'Add Address' to get started."
-        />
-      ) : (
-        <div className="rounded-md border">
-          <div className="p-8 text-center text-muted-foreground">
-            Loading addresses...
-          </div>
-        </div>
-      )}
+      <DataTable columns={columns} data={addresses || []} />
     </>
   );
 }

@@ -30,7 +30,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
-import { CRYPTO_INFO, CRYPTO_SYMBOLS, type CryptoType } from "@/lib/constants";
+import {
+  CRYPTO_SYMBOLS,
+  type CryptoType,
+  getCryptoInfo,
+} from "@/lib/constants";
 import { validateCryptoAddress } from "@/lib/validator";
 
 // Form schema with dynamic validation based on selected crypto type
@@ -50,7 +54,7 @@ const formSchema = z
       if (!isValid) {
         ctx.addIssue({
           code: "custom",
-          message: `Invalid ${cryptoType.toUpperCase()} address format`,
+          message: `Invalid ${cryptoType} address format`,
           path: ["address"],
         });
       }
@@ -64,7 +68,7 @@ export function CreateAddressDialog() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      cryptoType: "btc",
+      cryptoType: "BTC",
       address: "",
       label: "",
     },
@@ -166,7 +170,9 @@ export function CreateAddressDialog() {
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder={CRYPTO_INFO[watchedCryptoType].placeholder}
+                        placeholder={
+                          getCryptoInfo(watchedCryptoType)?.placeholder
+                        }
                         className="font-mono text-sm"
                         autoComplete="off"
                       />

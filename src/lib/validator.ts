@@ -6,7 +6,7 @@ export function validateCryptoAddress(
   address: string,
 ): boolean {
   switch (type) {
-    case "btc":
+    case "BTC":
       // Bitcoin address validation (simplified)
       // P2PKH: starts with 1, P2SH: starts with 3, Bech32: starts with bc1
       return (
@@ -14,7 +14,7 @@ export function validateCryptoAddress(
         /^bc1[a-z0-9]{39,59}$/.test(address)
       );
 
-    case "ltc":
+    case "LTC":
       // Litecoin address validation (simplified)
       // Legacy: starts with L or M, SegWit: starts with ltc1
       return (
@@ -22,7 +22,7 @@ export function validateCryptoAddress(
         /^ltc1[a-z0-9]{39,59}$/.test(address)
       );
 
-    case "usdt":
+    case "USDT":
       // USDT can be on multiple chains, we'll accept common formats
       // Ethereum/ERC-20: 0x followed by 40 hex characters
       // TRC-20 (Tron): starts with T

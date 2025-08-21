@@ -53,7 +53,7 @@ export const add = mutation({
     if (!validateCryptoAddress(args.cryptoType, args.address)) {
       throw new ConvexError({
         code: "INVALID_ADDRESS",
-        message: `Invalid ${args.cryptoType.toUpperCase()} address format`,
+        message: `Invalid ${args.cryptoType} address format`,
       });
     }
 

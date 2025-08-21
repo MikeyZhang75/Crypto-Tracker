@@ -119,10 +119,12 @@ export const update = mutation({
       });
     }
 
-    const updates: { updatedAt: number; label?: string } = {
+    // Always include the label in updates, even if it's undefined
+    // This allows clearing the label by setting it to undefined
+    const updates = {
       updatedAt: Date.now(),
+      label: args.label,
     };
-    if (args.label !== undefined) updates.label = args.label;
 
     return await ctx.db.patch(args.id, updates);
   },

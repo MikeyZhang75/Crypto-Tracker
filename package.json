@@ -28,6 +28,7 @@
     "@t3-oss/env-core": "^0.13.8",
     "@tabler/icons-react": "^3.34.1",
     "@tanstack/react-table": "^8.21.3",
+    "@untitledui/icons": "^0.0.19",
     "@web3icons/react": "^4.0.22",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

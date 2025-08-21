@@ -32,7 +32,7 @@ const schema = defineSchema({
     blockNumber: v.optional(v.string()),
     fee: v.optional(v.string()),
     status: v.optional(v.string()),
-    type: v.string(), // "sent" or "received"
+    type: v.union(v.literal("sent"), v.literal("received")),
     webhookSent: v.optional(v.boolean()),
     createdAt: v.number(),
   })

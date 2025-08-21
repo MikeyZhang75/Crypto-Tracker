@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation } from "convex/react";
 import { IconRefresh } from "@tabler/icons-react";
+import { useMutation } from "convex/react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { toast } from "sonner";
 
 interface ResendWebhookButtonProps {
   transactionId: Id<"transactions">;
@@ -33,7 +33,7 @@ export function ResendWebhookButton({
 
   return (
     <Button
-      variant="ghost"
+      variant="outline"
       size="sm"
       onClick={handleResend}
       disabled={isLoading}

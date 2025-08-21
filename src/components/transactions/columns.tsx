@@ -3,6 +3,12 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { ResendWebhookButton } from "./resend-webhook-button";
 
@@ -15,9 +21,18 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
       // Show first 8 and last 8 characters
       const shortened = `${txId.slice(0, 8)}...${txId.slice(-8)}`;
       return (
-        <span className="font-mono text-xs" title={txId}>
-          {shortened}
-        </span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="font-mono text-xs cursor-pointer">
+                {shortened}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="font-mono text-xs">{txId}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
     },
   },
@@ -27,8 +42,17 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
     cell: ({ row }) => {
       const type = row.original.type;
       return (
-        <Badge variant={type === "received" ? "default" : "secondary"}>
-          {type}
+        <Badge
+          variant="outline"
+          className={`gap-1.5 ${type === "received" ? "" : "opacity-50"}`}
+        >
+          <span
+            className={`size-1.5 rounded-full ${
+              type === "received" ? "bg-emerald-500" : "bg-gray-400"
+            }`}
+            aria-hidden="true"
+          />
+          {type === "received" ? "Received" : "Sent"}
         </Badge>
       );
     },
@@ -55,9 +79,18 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
       const address = row.original.from;
       const shortened = `${address.slice(0, 6)}...${address.slice(-6)}`;
       return (
-        <span className="font-mono text-xs" title={address}>
-          {shortened}
-        </span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="font-mono text-xs cursor-pointer">
+                {shortened}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="font-mono text-xs">{address}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
     },
   },
@@ -68,9 +101,18 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
       const address = row.original.to;
       const shortened = `${address.slice(0, 6)}...${address.slice(-6)}`;
       return (
-        <span className="font-mono text-xs" title={address}>
-          {shortened}
-        </span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="font-mono text-xs cursor-pointer">
+                {shortened}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="font-mono text-xs">{address}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
     },
   },
@@ -79,10 +121,23 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
     header: "Time",
     cell: ({ row }) => {
       const timestamp = row.original.timestamp;
+      const date = new Date(timestamp);
+      const formattedDate = date.toLocaleString();
+      const relativeTime = formatDistanceToNow(date, { addSuffix: true });
+
       return (
-        <span className="text-muted-foreground">
-          {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
-        </span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-muted-foreground cursor-pointer">
+                {relativeTime}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{formattedDate}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
     },
   },
@@ -91,15 +146,23 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
     header: "Webhook",
     cell: ({ row }) => {
       const sent = row.original.webhookSent;
-      if (sent) {
-        return <Badge variant="default">Sent</Badge>;
-      }
       return (
         <div className="flex items-center gap-2">
-          <Badge variant="secondary">Pending</Badge>
-          <ResendWebhookButton transactionId={row.original._id} />
+          <Badge variant="outline" className="gap-1.5">
+            <span
+              className={`size-1.5 rounded-full ${
+                sent ? "bg-emerald-500" : "bg-gray-400"
+              }`}
+              aria-hidden="true"
+            />
+            {sent ? "Sent" : "Pending"}
+          </Badge>
         </div>
       );
     },
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => <ResendWebhookButton transactionId={row.original._id} />,
   },
 ];

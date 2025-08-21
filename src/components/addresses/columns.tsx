@@ -1,8 +1,10 @@
 "use client";
 
-import { IconWebhook } from "@tabler/icons-react";
+import { IconExternalLink, IconWebhook } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { TokenIcon } from "@web3icons/react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import type { Doc } from "@/convex/_generated/dataModel";
 
 import { AddressActions } from "./address-actions";
@@ -62,6 +64,18 @@ export const columns: ColumnDef<Doc<"addresses">>[] = [
           <span className="text-xs text-muted-foreground">Active</span>
         </div>
       </div>
+    ),
+  },
+  {
+    id: "transactions",
+    header: "Transactions",
+    cell: ({ row }) => (
+      <Link href={`/addresses/${row.original._id}/transactions`}>
+        <Button variant="ghost" size="sm">
+          View
+          <IconExternalLink className="ml-1 h-3 w-3" />
+        </Button>
+      </Link>
     ),
   },
   {

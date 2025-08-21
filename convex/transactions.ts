@@ -1,14 +1,105 @@
-import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
+import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import {
   internalAction,
   internalMutation,
   internalQuery,
+  mutation,
+  query,
 } from "./_generated/server";
 
 // USDT contract address on Tron mainnet
 const USDT_CONTRACT_ADDRESS = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
+
+// Public query to list transactions by address
+export const listByAddress = query({
+  args: {
+    addressId: v.id("addresses"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError({
+        code: "UNAUTHORIZED",
+        message: "You must be authenticated to view transactions",
+      });
+    }
+
+    // Verify the address belongs to the user
+    const address = await ctx.db.get(args.addressId);
+    if (!address) {
+      throw new ConvexError({
+        code: "NOT_FOUND",
+        message: "Address not found",
+      });
+    }
+
+    if (address.userId !== userId) {
+      throw new ConvexError({
+        code: "FORBIDDEN",
+        message: "You don't have permission to view these transactions",
+      });
+    }
+
+    // Get all transactions for this address, ordered by timestamp descending
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_address_and_timestamp", (q) =>
+        q.eq("addressId", args.addressId),
+      )
+      .order("desc")
+      .collect();
+
+    return transactions;
+  },
+});
+
+// Public mutation to resend webhook for a transaction
+export const resendWebhook = mutation({
+  args: {
+    transactionId: v.id("transactions"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError({
+        code: "UNAUTHORIZED",
+        message: "You must be authenticated to resend webhooks",
+      });
+    }
+
+    // Get the transaction
+    const transaction = await ctx.db.get(args.transactionId);
+    if (!transaction) {
+      throw new ConvexError({
+        code: "NOT_FOUND",
+        message: "Transaction not found",
+      });
+    }
+
+    // Verify the transaction belongs to the user
+    if (transaction.userId !== userId) {
+      throw new ConvexError({
+        code: "FORBIDDEN",
+        message: "You don't have permission to resend this webhook",
+      });
+    }
+
+    // Reset the webhook sent status to trigger a resend
+    await ctx.db.patch(args.transactionId, {
+      webhookSent: false,
+    });
+
+    // Schedule the webhook to be sent immediately
+    await ctx.scheduler.runAfter(0, internal.transactions.sendWebhook, {
+      transactionId: args.transactionId,
+    });
+
+    return { success: true };
+  },
+});
 
 // Type definition for TronGrid API response
 interface TronGridTRC20Response {

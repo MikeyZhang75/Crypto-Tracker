@@ -2,17 +2,22 @@
 
 import {
   IconDots,
+  IconExternalLink,
+  IconPencil,
   IconPlayerPause,
   IconPlayerPlay,
   IconTrash,
 } from "@tabler/icons-react";
 import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
+import Link from "next/link";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -20,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
+import { EditAddressDialog } from "./edit-address-dialog";
 
 interface AddressActionsProps {
   address: Doc<"addresses">;
@@ -28,7 +34,7 @@ interface AddressActionsProps {
 export function AddressActions({ address }: AddressActionsProps) {
   const removeAddress = useMutation(api.addresses.remove);
   const toggleListening = useMutation(api.addresses.toggleListening);
-
+  const [editAddressDialogOpen, setEditAddressDialogOpen] = useState(false);
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this address?")) {
       try {
@@ -76,27 +82,46 @@ export function AddressActions({ address }: AddressActionsProps) {
           <span className="sr-only">Open menu</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-        <DropdownMenuItem onClick={handleToggleMonitoring}>
-          {address.isListening ? (
-            <>
-              <IconPlayerPause className="size-4" />
-              <span>Stop</span>
-            </>
-          ) : (
-            <>
-              <IconPlayerPlay className="size-4" />
-              <span>Start</span>
-            </>
-          )}
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={() => setEditAddressDialogOpen(true)}>
+            <IconPencil className="size-4" />
+            Edit
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              href={`/addresses/${encodeURIComponent(address.address)}/transactions`}
+            >
+              <IconExternalLink className="size-4" />
+              View
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleToggleMonitoring}>
+            {address.isListening ? (
+              <>
+                <IconPlayerPause className="size-4" />
+                <span>Stop</span>
+              </>
+            ) : (
+              <>
+                <IconPlayerPlay className="size-4" />
+                <span>Start</span>
+              </>
+            )}
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onClick={handleDelete}>
           <IconTrash className="h-4 w-4" />
           Delete
         </DropdownMenuItem>
       </DropdownMenuContent>
+      <EditAddressDialog
+        address={address}
+        open={editAddressDialogOpen}
+        onOpenChange={setEditAddressDialogOpen}
+      />
     </DropdownMenu>
   );
 }

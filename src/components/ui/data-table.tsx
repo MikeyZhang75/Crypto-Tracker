@@ -12,7 +12,6 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   Table,
@@ -28,7 +27,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   pageSize?: number;
   emptyMessage?: string;
-  getRowUrl?: (row: TData) => string | undefined;
+  // Removed getRowUrl as we'll handle navigation at the cell/column level
 }
 
 export function DataTable<TData, TValue>({
@@ -36,9 +35,7 @@ export function DataTable<TData, TValue>({
   data,
   pageSize = 10,
   emptyMessage = "No results.",
-  getRowUrl,
 }: DataTableProps<TData, TValue>) {
-  const router = useRouter();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -91,42 +88,21 @@ export function DataTable<TData, TValue>({
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => {
-              const url = getRowUrl?.(row.original);
-              const handleRowClick = (e: React.MouseEvent) => {
-                // Only navigate if clicking on empty space (not on interactive elements)
-                const target = e.target as HTMLElement;
-                const isInteractive =
-                  target.closest("button") ||
-                  target.closest("a") ||
-                  target.closest('[role="button"]') ||
-                  target.closest("input") ||
-                  target.closest("select") ||
-                  target.closest("textarea");
-
-                if (!isInteractive && url) {
-                  router.push(url);
-                }
-              };
-
-              return (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  onClick={handleRowClick}
-                  className={url ? "cursor-pointer" : undefined}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              );
-            })
+            table.getRowModel().rows.map((row) => (
+              <TableRow
+                key={row.id}
+                data-state={row.getIsSelected() && "selected"}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(
+                      cell.column.columnDef.cell,
+                      cell.getContext(),
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center">

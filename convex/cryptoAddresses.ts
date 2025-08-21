@@ -3,7 +3,7 @@ import { ConvexError, v } from "convex/values";
 import { CRYPTO_SYMBOLS } from "@/lib/constants";
 import { validateCryptoAddress } from "@/lib/validator";
 import { internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
 export const list = query({
@@ -22,7 +22,7 @@ export const list = query({
     }
 
     const query = ctx.db
-      .query("cryptoAddresses")
+      .query("addresses")
       .withIndex("by_user", (q) => q.eq("userId", userId));
 
     const addresses = await query.collect();
@@ -60,7 +60,7 @@ export const add = mutation({
 
     // Check if address already exists for this user
     const existing = await ctx.db
-      .query("cryptoAddresses")
+      .query("addresses")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .filter((q) =>
         q.and(
@@ -78,7 +78,7 @@ export const add = mutation({
     }
 
     const now = Date.now();
-    return await ctx.db.insert("cryptoAddresses", {
+    return await ctx.db.insert("addresses", {
       userId: userId as Id<"users">,
       cryptoType: args.cryptoType,
       address: args.address,
@@ -92,7 +92,7 @@ export const add = mutation({
 
 export const update = mutation({
   args: {
-    id: v.id("cryptoAddresses"),
+    id: v.id("addresses"),
     label: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -104,7 +104,7 @@ export const update = mutation({
       });
     }
 
-    const address = await ctx.db.get(args.id);
+    const address = (await ctx.db.get(args.id)) as Doc<"addresses">;
     if (!address) {
       throw new ConvexError({
         code: "NOT_FOUND",
@@ -131,7 +131,7 @@ export const update = mutation({
 
 export const toggleListening = mutation({
   args: {
-    id: v.id("cryptoAddresses"),
+    id: v.id("addresses"),
     isListening: v.boolean(),
   },
   handler: async (ctx, args) => {
@@ -182,7 +182,7 @@ export const toggleListening = mutation({
 
 export const remove = mutation({
   args: {
-    id: v.id("cryptoAddresses"),
+    id: v.id("addresses"),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);

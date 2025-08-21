@@ -6,7 +6,7 @@ import { CRYPTO_SYMBOLS } from "@/lib/constants";
 const schema = defineSchema({
   ...authTables,
 
-  cryptoAddresses: defineTable({
+  addresses: defineTable({
     userId: v.id("users"),
     cryptoType: v.union(...CRYPTO_SYMBOLS.map((symbol) => v.literal(symbol))),
     address: v.string(),
@@ -19,7 +19,7 @@ const schema = defineSchema({
     .index("by_user_and_type", ["userId", "cryptoType"]),
 
   transactions: defineTable({
-    addressId: v.id("cryptoAddresses"),
+    addressId: v.id("addresses"),
     userId: v.id("users"),
     transactionId: v.string(),
     cryptoType: v.union(...CRYPTO_SYMBOLS.map((symbol) => v.literal(symbol))),

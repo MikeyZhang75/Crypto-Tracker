@@ -2,8 +2,7 @@
 
 import { IconArrowLeft } from "@tabler/icons-react";
 import { useQuery } from "convex/react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { columns } from "@/components/transactions/columns";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -13,7 +12,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 export default function AddressTransactionsPage() {
   const params = useParams();
   const addressId = params.id as Id<"addresses">;
-
+  const router = useRouter();
   // Get transactions for this address
   const transactions = useQuery(api.transactions.listByAddress, {
     addressId,
@@ -23,12 +22,10 @@ export default function AddressTransactionsPage() {
     <div className="space-y-6">
       {/* Back button */}
       <div className="flex items-center gap-4">
-        <Link href="/addresses">
-          <Button variant="ghost" size="sm">
-            <IconArrowLeft className="h-4 w-4" />
-            Back to Addresses
-          </Button>
-        </Link>
+        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+          <IconArrowLeft className="h-4 w-4" />
+          Back to Addresses
+        </Button>
       </div>
 
       {/* Transactions Table */}

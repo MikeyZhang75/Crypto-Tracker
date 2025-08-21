@@ -62,9 +62,8 @@ export default function SignInPage() {
       });
 
       router.push("/");
-    } catch (error) {
+    } catch {
       setError("Invalid email or password. Please try again.");
-      console.error("Sign in error:", error);
     } finally {
       setIsLoading(false);
     }

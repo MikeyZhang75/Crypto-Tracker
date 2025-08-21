@@ -6,6 +6,7 @@ import type { Doc } from "@/convex/_generated/dataModel";
 
 import { AddressActions } from "./address-actions";
 import { EditableLabelCell } from "./editable-label-cell";
+import { ListeningToggle } from "./listening-toggle";
 
 export const columns: ColumnDef<Doc<"cryptoAddresses">>[] = [
   {
@@ -40,6 +41,15 @@ export const columns: ColumnDef<Doc<"cryptoAddresses">>[] = [
     accessorKey: "label",
     header: () => <div className="ml-3">Label</div>,
     cell: ({ row }) => <EditableLabelCell address={row.original} />,
+  },
+  {
+    accessorKey: "isListening",
+    header: () => <div className="text-center">Monitoring</div>,
+    cell: ({ row }) => (
+      <div className="text-center">
+        <ListeningToggle address={row.original} />
+      </div>
+    ),
   },
   {
     id: "actions",

@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import {
   internalAction,
   internalMutation,
@@ -175,6 +176,11 @@ export const storeTransactionsAndReschedule = internalMutation({
       return;
     }
 
+    const newTransactionIds: Array<{
+      _id: Id<"transactions">;
+      hasWebhook: boolean;
+    }> = [];
+
     for (const transfer of args.transfers) {
       // Check if transaction already exists (safety check)
       const existing = await ctx.db
@@ -184,7 +190,7 @@ export const storeTransactionsAndReschedule = internalMutation({
         .first();
 
       if (!existing) {
-        await ctx.db.insert("transactions", {
+        const transactionId = await ctx.db.insert("transactions", {
           addressId: args.addressId,
           userId: address.userId,
           transactionId: transfer.transaction_id,
@@ -197,11 +203,24 @@ export const storeTransactionsAndReschedule = internalMutation({
             transfer.to.toLowerCase() === address.address.toLowerCase()
               ? "received"
               : "sent",
+          webhookSent: false,
           createdAt: now,
         });
 
         console.log(`Stored new transaction ${transfer.transaction_id}`);
+
+        // Track new transactions that need webhook calls
+        if (address.webhookUrl) {
+          newTransactionIds.push({ _id: transactionId, hasWebhook: true });
+        }
       }
+    }
+
+    // Schedule webhook calls for new transactions
+    for (const { _id } of newTransactionIds) {
+      await ctx.scheduler.runAfter(0, internal.transactions.sendWebhook, {
+        transactionId: _id,
+      });
     }
 
     // Schedule the next check
@@ -238,5 +257,113 @@ export const processTransactionFetch = internalAction({
         error: result.error,
       },
     );
+  },
+});
+
+// Internal action to send webhook for a transaction
+export const sendWebhook = internalAction({
+  args: {
+    transactionId: v.id("transactions"),
+  },
+  handler: async (ctx, args) => {
+    // Get the transaction details
+    const transaction = await ctx.runQuery(
+      internal.transactions.getTransaction,
+      {
+        transactionId: args.transactionId,
+      },
+    );
+
+    if (!transaction) {
+      console.log(`Transaction ${args.transactionId} not found`);
+      return;
+    }
+
+    // Skip if webhook already sent
+    if (transaction.webhookSent) {
+      console.log(`Webhook already sent for transaction ${args.transactionId}`);
+      return;
+    }
+
+    // Get the address details to get the webhook URL
+    const address = await ctx.runQuery(internal.transactions.getAddress, {
+      addressId: transaction.addressId,
+    });
+
+    if (!address || !address.webhookUrl) {
+      console.log(
+        `No webhook URL configured for address ${transaction.addressId}`,
+      );
+      return;
+    }
+
+    try {
+      // Prepare the webhook payload
+      const webhookPayload = {
+        transactionId: transaction.transactionId,
+        cryptoType: transaction.cryptoType,
+        from: transaction.from,
+        to: transaction.to,
+        amount: transaction.amount,
+        timestamp: transaction.timestamp,
+        blockNumber: transaction.blockNumber,
+        fee: transaction.fee,
+        status: transaction.status,
+        type: transaction.type,
+        receivedAt: transaction.createdAt,
+      };
+
+      // Send the webhook with verification code in header
+      const response = await fetch(address.webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": "CryptoTracker/1.0",
+          "X-Webhook-Verification": address.webhookVerificationCode,
+        },
+        body: JSON.stringify(webhookPayload),
+      });
+
+      if (response.ok) {
+        // Mark the webhook as sent
+        await ctx.runMutation(internal.transactions.markWebhookSent, {
+          transactionId: args.transactionId,
+        });
+        console.log(
+          `Webhook sent successfully for transaction ${transaction.transactionId}`,
+        );
+      } else {
+        console.error(
+          `Webhook failed for transaction ${transaction.transactionId}: ${response.status} ${response.statusText}`,
+        );
+        // Optionally, you could implement retry logic here
+      }
+    } catch (error) {
+      console.error(
+        `Error sending webhook for transaction ${transaction.transactionId}:`,
+        error,
+      );
+      // Optionally, you could implement retry logic here
+    }
+  },
+});
+
+// Internal query to get a transaction
+export const getTransaction = internalQuery({
+  args: { transactionId: v.id("transactions") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.transactionId);
+  },
+});
+
+// Internal mutation to mark webhook as sent
+export const markWebhookSent = internalMutation({
+  args: {
+    transactionId: v.id("transactions"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.transactionId, {
+      webhookSent: true,
+    });
   },
 });

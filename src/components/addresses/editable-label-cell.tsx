@@ -48,6 +48,8 @@ export function EditableLabelCell({ address }: EditableLabelCellProps) {
       await updateAddress({
         id: address._id,
         label: trimmedValue || undefined,
+        webhookUrl: address.webhookUrl,
+        webhookVerificationCode: address.webhookVerificationCode,
       });
 
       toast.success("Label updated successfully");

@@ -5,6 +5,17 @@ import { validateCryptoAddress } from "@/lib/validator";
 import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 
+// Helper function to generate a secure verification code
+function generateVerificationCode(): string {
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let code = "";
+  for (let i = 0; i < 32; i++) {
+    code += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return code;
+}
+
 export const list = query({
   args: {
     cryptoType: v.optional(
@@ -39,6 +50,8 @@ export const add = mutation({
     cryptoType: v.union(...CRYPTO_SYMBOLS.map((symbol) => v.literal(symbol))),
     address: v.string(),
     label: v.optional(v.string()),
+    webhookUrl: v.string(),
+    webhookVerificationCode: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -77,11 +90,17 @@ export const add = mutation({
     }
 
     const now = Date.now();
+    // Use provided verification code or generate a new one
+    const verificationCode =
+      args.webhookVerificationCode || generateVerificationCode();
+
     return await ctx.db.insert("addresses", {
       userId: userId,
       cryptoType: args.cryptoType,
       address: args.address,
       label: args.label,
+      webhookUrl: args.webhookUrl,
+      webhookVerificationCode: verificationCode,
       isListening: false, // Default to not listening
       createdAt: now,
       updatedAt: now,
@@ -93,6 +112,8 @@ export const update = mutation({
   args: {
     id: v.id("addresses"),
     label: v.optional(v.string()),
+    webhookUrl: v.string(),
+    webhookVerificationCode: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -119,12 +140,25 @@ export const update = mutation({
       });
     }
 
-    // Always include the label in updates, even if it's undefined
-    // This allows clearing the label by setting it to undefined
-    const updates = {
+    // Always include the label and webhookUrl in updates, even if they're undefined
+    // This allows clearing them by setting to undefined
+    // For verification code, only update if provided, otherwise keep existing
+    const updates: {
+      updatedAt: number;
+      label?: string;
+      webhookUrl?: string;
+      webhookVerificationCode?: string;
+    } = {
       updatedAt: Date.now(),
       label: args.label,
+      webhookUrl: args.webhookUrl,
     };
+
+    // Only update verification code if explicitly provided
+    if (args.webhookVerificationCode !== undefined) {
+      updates.webhookVerificationCode =
+        args.webhookVerificationCode || generateVerificationCode();
+    }
 
     return await ctx.db.patch(args.id, updates);
   },

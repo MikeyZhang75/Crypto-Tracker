@@ -5,6 +5,7 @@ import { ConvexError } from "convex/values";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -30,18 +31,51 @@ export function EditAddressDialog({
   onOpenChange,
 }: EditAddressDialogProps) {
   const [label, setLabel] = useState(address.label || "");
+  const [webhookUrl, setWebhookUrl] = useState(address.webhookUrl);
+  const [webhookError, setWebhookError] = useState("");
+  const [verificationCode, setVerificationCode] = useState(
+    address.webhookVerificationCode,
+  );
+  const [regenerateCode, setRegenerateCode] = useState(false);
   const updateAddress = useMutation(api.addresses.update);
 
   // Update local state when address prop changes
   useEffect(() => {
     setLabel(address.label || "");
-  }, [address.label]);
+    setWebhookUrl(address.webhookUrl);
+    setWebhookError("");
+    setVerificationCode(address.webhookVerificationCode);
+    setRegenerateCode(false);
+  }, [address.label, address.webhookUrl, address.webhookVerificationCode]);
 
   const handleUpdate = async () => {
+    // Validate webhook URL
+    if (!webhookUrl) {
+      setWebhookError("Webhook URL is required");
+      return;
+    }
+
+    try {
+      const url = new URL(webhookUrl);
+      if (!url.protocol.startsWith("http")) {
+        setWebhookError("Invalid URL format");
+        return;
+      }
+    } catch {
+      setWebhookError("Invalid URL format");
+      return;
+    }
+
     try {
       await updateAddress({
         id: address._id,
         label: label || undefined,
+        webhookUrl: webhookUrl,
+        webhookVerificationCode: regenerateCode
+          ? ""
+          : verificationCode !== address.webhookVerificationCode
+            ? verificationCode
+            : undefined,
       });
       toast.success("Address updated successfully");
       onOpenChange(false);
@@ -62,7 +96,7 @@ export function EditAddressDialog({
         <DialogHeader>
           <DialogTitle>Edit Address</DialogTitle>
           <DialogDescription>
-            Update the label for this address
+            Update the label and webhook URL for this address
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -75,6 +109,57 @@ export function EditAddressDialog({
               onChange={(e) => setLabel(e.target.value)}
               placeholder="e.g., Main Wallet, Exchange"
             />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="edit-webhook">Webhook URL (Required)</Label>
+            <Input
+              id="edit-webhook"
+              type="url"
+              value={webhookUrl}
+              onChange={(e) => {
+                setWebhookUrl(e.target.value);
+                setWebhookError("");
+              }}
+              placeholder="https://example.com/webhook"
+              required
+            />
+            {webhookError ? (
+              <p className="text-sm text-destructive">{webhookError}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Webhook URL to receive transaction notifications
+              </p>
+            )}
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="edit-verification">Verification Code</Label>
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="regenerate-code"
+                checked={regenerateCode}
+                onCheckedChange={(checked) =>
+                  setRegenerateCode(checked as boolean)
+                }
+              />
+              <Label htmlFor="regenerate-code" className="text-sm font-normal">
+                Generate new verification code
+              </Label>
+            </div>
+            {!regenerateCode && (
+              <Input
+                id="edit-verification"
+                type="text"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+                placeholder="Verification code"
+                className="font-mono"
+              />
+            )}
+            <p className="text-sm text-muted-foreground">
+              {regenerateCode
+                ? "A new verification code will be generated"
+                : "Code used to authenticate webhook requests"}
+            </p>
           </div>
         </div>
         <DialogFooter>

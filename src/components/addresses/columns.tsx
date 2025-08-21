@@ -1,5 +1,6 @@
 "use client";
 
+import { IconWebhook } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { TokenIcon } from "@web3icons/react";
 import type { Doc } from "@/convex/_generated/dataModel";
@@ -50,6 +51,18 @@ export const columns: ColumnDef<Doc<"addresses">>[] = [
     accessorKey: "label",
     header: () => <div className="ml-3">Label</div>,
     cell: ({ row }) => <EditableLabelCell address={row.original} />,
+  },
+  {
+    accessorKey: "webhookUrl",
+    header: () => <div className="text-center">Webhook</div>,
+    cell: () => (
+      <div className="flex justify-center">
+        <div className="flex items-center gap-1">
+          <IconWebhook className="h-4 w-4 text-green-500" />
+          <span className="text-xs text-muted-foreground">Active</span>
+        </div>
+      </div>
+    ),
   },
   {
     id: "actions",

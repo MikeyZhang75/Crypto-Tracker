@@ -11,6 +11,8 @@ const schema = defineSchema({
     cryptoType: v.union(...CRYPTO_SYMBOLS.map((symbol) => v.literal(symbol))),
     address: v.string(),
     label: v.optional(v.string()),
+    webhookUrl: v.string(),
+    webhookVerificationCode: v.string(),
     isListening: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -31,6 +33,7 @@ const schema = defineSchema({
     fee: v.optional(v.string()),
     status: v.optional(v.string()),
     type: v.string(), // "sent" or "received"
+    webhookSent: v.optional(v.boolean()),
     createdAt: v.number(),
   })
     .index("by_address", ["addressId"])

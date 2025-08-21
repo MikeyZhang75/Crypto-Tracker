@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { TokenIcon } from "@web3icons/react";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { CRYPTO_INFO, type CryptoType } from "@/lib/constants";
+
 import { AddressActions } from "./address-actions";
 import { EditableLabelCell } from "./editable-label-cell";
 
@@ -11,8 +12,7 @@ export const columns: ColumnDef<Doc<"cryptoAddresses">>[] = [
   {
     id: "index",
     header: "ID",
-    cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
-    size: 100,
+    cell: ({ row }) => row.original._id.toString().slice(0, 8),
   },
   {
     accessorKey: "cryptoType",
@@ -26,7 +26,7 @@ export const columns: ColumnDef<Doc<"cryptoAddresses">>[] = [
             variant="branded"
             size={16}
           />
-          <span>{CRYPTO_INFO[cryptoType].symbol}</span>
+          <span>{CRYPTO_INFO[cryptoType].symbol.toUpperCase()}</span>
         </div>
       );
     },
@@ -35,14 +35,12 @@ export const columns: ColumnDef<Doc<"cryptoAddresses">>[] = [
     accessorKey: "address",
     header: "Address",
     cell: ({ row }) => (
-      <span className="font-mono text-sm max-w-[300px] truncate block">
-        {row.getValue("address")}
-      </span>
+      <span className="font-mono text-sm">{row.getValue("address")}</span>
     ),
   },
   {
     accessorKey: "label",
-    header: "Label",
+    header: () => <div className="ml-3">Label</div>,
     cell: ({ row }) => <EditableLabelCell address={row.original} />,
   },
   {

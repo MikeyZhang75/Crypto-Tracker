@@ -13,10 +13,10 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as addresses from "../addresses.js";
 import type * as auth from "../auth.js";
-import type * as cryptoAddresses from "../cryptoAddresses.js";
-import type * as cryptoTransfers from "../cryptoTransfers.js";
 import type * as http from "../http.js";
+import type * as transactions from "../transactions.js";
 import type * as users from "../users.js";
 
 /**
@@ -28,10 +28,10 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  addresses: typeof addresses;
   auth: typeof auth;
-  cryptoAddresses: typeof cryptoAddresses;
-  cryptoTransfers: typeof cryptoTransfers;
   http: typeof http;
+  transactions: typeof transactions;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

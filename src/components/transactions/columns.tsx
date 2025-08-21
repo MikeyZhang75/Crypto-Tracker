@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { ResendWebhookButton } from "./resend-webhook-button";
+import { WebhookHistoryDrawer } from "./webhook-history-drawer";
 
 export const columns: ColumnDef<Doc<"transactions">>[] = [
   {
@@ -163,6 +164,11 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => <ResendWebhookButton transactionId={row.original._id} />,
+    cell: ({ row }) => (
+      <div className="flex items-center gap-1">
+        <WebhookHistoryDrawer transactionId={row.original._id} />
+        <ResendWebhookButton transactionId={row.original._id} />
+      </div>
+    ),
   },
 ];

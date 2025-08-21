@@ -26,6 +26,7 @@ import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { ResendWebhookButton } from "./resend-webhook-button";
 
 interface WebhookHistoryDrawerProps {
   transactionId: Id<"transactions">;
@@ -180,11 +181,14 @@ export function WebhookHistoryDrawer({
                 </DrawerPrimitive.Description>
               </div>
             </div>
-            <DrawerPrimitive.Close asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <IconX className="h-4 w-4" />
-              </Button>
-            </DrawerPrimitive.Close>
+            <div className="flex items-center gap-2">
+              <ResendWebhookButton transactionId={transactionId} />
+              <DrawerPrimitive.Close asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <IconX className="h-4 w-4" />
+                </Button>
+              </DrawerPrimitive.Close>
+            </div>
           </div>
 
           {/* Content */}

@@ -2,7 +2,6 @@
 
 import {
   IconDots,
-  IconExternalLink,
   IconPencil,
   IconPlayerPause,
   IconPlayerPlay,
@@ -10,7 +9,6 @@ import {
 } from "@tabler/icons-react";
 import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
-import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -88,14 +86,6 @@ export function AddressActions({ address }: AddressActionsProps) {
           <DropdownMenuItem onClick={() => setEditAddressDialogOpen(true)}>
             <IconPencil className="size-4" />
             Edit
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link
-              href={`/addresses/${encodeURIComponent(address.address)}/transactions`}
-            >
-              <IconExternalLink className="size-4" />
-              View
-            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleToggleMonitoring}>
             {address.isListening ? (

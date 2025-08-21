@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { formatDistanceToNow } from "date-fns";
+import { CopyableText } from "@/components/custom-ui/copyable-text";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -10,7 +11,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { Doc } from "@/convex/_generated/dataModel";
-import { ResendWebhookButton } from "./resend-webhook-button";
 import { WebhookHistoryDrawer } from "./webhook-history-drawer";
 
 export const columns: ColumnDef<Doc<"transactions">>[] = [
@@ -22,18 +22,15 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
       // Show first 8 and last 8 characters
       const shortened = `${txId.slice(0, 8)}...${txId.slice(-8)}`;
       return (
-        <TooltipProvider>
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <span className="font-mono text-xs cursor-pointer">
-                {shortened}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={5}>
-              <p className="font-mono text-xs">{txId}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <CopyableText
+          text={shortened}
+          data={txId}
+          label="Click to copy transaction ID"
+          toastMessages={{
+            success: "Transaction ID copied to clipboard",
+            error: "Failed to copy transaction ID",
+          }}
+        />
       );
     },
   },
@@ -65,7 +62,7 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
       const amount = row.original.amount;
       const cryptoType = row.original.cryptoType;
       // Convert from smallest unit (for USDT, it's in 6 decimals)
-      const displayAmount = (Number.parseInt(amount, 10) / 1000000).toFixed(2);
+      const displayAmount = (Number.parseInt(amount, 10) / 1000000).toFixed(6);
       return (
         <span className="font-medium">
           {displayAmount} {cryptoType}
@@ -80,18 +77,15 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
       const address = row.original.from;
       const shortened = `${address.slice(0, 6)}...${address.slice(-6)}`;
       return (
-        <TooltipProvider>
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <span className="font-mono text-xs cursor-pointer">
-                {shortened}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={5}>
-              <p className="font-mono text-xs">{address}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <CopyableText
+          text={shortened}
+          data={address}
+          label="Click to copy address"
+          toastMessages={{
+            success: "Address copied to clipboard",
+            error: "Failed to copy address",
+          }}
+        />
       );
     },
   },
@@ -143,9 +137,8 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
   {
     id: "actions",
     cell: ({ row }) => (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 justify-end">
         <WebhookHistoryDrawer transactionId={row.original._id} />
-        <ResendWebhookButton transactionId={row.original._id} />
       </div>
     ),
   },

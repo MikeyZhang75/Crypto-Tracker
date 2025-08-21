@@ -2,6 +2,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
 import { CRYPTO_SYMBOLS } from "@/lib/constants";
 import { validateCryptoAddress } from "@/lib/validator";
+import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
@@ -82,6 +83,7 @@ export const add = mutation({
       cryptoType: args.cryptoType,
       address: args.address,
       label: args.label,
+      isListening: false, // Default to not listening
       createdAt: now,
       updatedAt: now,
     });
@@ -124,6 +126,57 @@ export const update = mutation({
     if (args.label !== undefined) updates.label = args.label;
 
     return await ctx.db.patch(args.id, updates);
+  },
+});
+
+export const toggleListening = mutation({
+  args: {
+    id: v.id("cryptoAddresses"),
+    isListening: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError({
+        code: "UNAUTHORIZED",
+        message: "You must be authenticated to toggle listening",
+      });
+    }
+
+    const address = await ctx.db.get(args.id);
+    if (!address) {
+      throw new ConvexError({
+        code: "NOT_FOUND",
+        message: "Address not found",
+      });
+    }
+    if (address.userId !== userId) {
+      throw new ConvexError({
+        code: "FORBIDDEN",
+        message: "You don't have permission to modify this address",
+      });
+    }
+
+    // Update the listening status
+    await ctx.db.patch(args.id, {
+      isListening: args.isListening,
+      updatedAt: Date.now(),
+    });
+
+    // If enabling listening, schedule the transaction fetcher
+    if (args.isListening) {
+      // Schedule the transaction fetcher to run immediately
+      await ctx.scheduler.runAfter(
+        0,
+        internal.cryptoTransfers.processTransactionFetch,
+        {
+          addressId: args.id,
+        },
+      );
+    }
+    // If disabling, the scheduled function will check isListening and stop itself
+
+    return { success: true };
   },
 });
 

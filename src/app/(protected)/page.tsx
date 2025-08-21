@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-
 export default function ProtectedPage() {
-  redirect("/addresses");
+  return <div>hello</div>;
 }

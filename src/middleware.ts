@@ -15,7 +15,7 @@ export default convexAuthNextjsMiddleware(async (request) => {
   // If user is on an auth page and is already authenticated,
   // redirect them to the dashboard or protected area
   if (isAuthRoute(request) && isAuthenticated) {
-    return nextjsMiddlewareRedirect(request, "/dashboard");
+    return nextjsMiddlewareRedirect(request, "/");
   }
 
   // If the route is not public and user is not authenticated,

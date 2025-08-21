@@ -11,7 +11,7 @@ import {
 } from "./_generated/server";
 
 // Public mutation to resend webhook for a transaction
-export const resendWebhook = mutation({
+export const resend = mutation({
   args: {
     transactionId: v.id("transactions"),
   },
@@ -47,7 +47,7 @@ export const resendWebhook = mutation({
     });
 
     // Schedule the webhook to be sent immediately
-    await ctx.scheduler.runAfter(0, internal.webhooks.sendWebhook, {
+    await ctx.scheduler.runAfter(0, internal.webhooks.send, {
       transactionId: args.transactionId,
     });
 
@@ -56,18 +56,15 @@ export const resendWebhook = mutation({
 });
 
 // Internal action to send webhook for a transaction
-export const sendWebhook = internalAction({
+export const send = internalAction({
   args: {
     transactionId: v.id("transactions"),
   },
   handler: async (ctx, args) => {
     // Get the transaction details
-    const transaction = await ctx.runQuery(
-      internal.webhooks.getTransaction,
-      {
-        transactionId: args.transactionId,
-      },
-    );
+    const transaction = await ctx.runQuery(internal.webhooks.getTransaction, {
+      transactionId: args.transactionId,
+    });
 
     if (!transaction) {
       console.log(`Transaction ${args.transactionId} not found`);
@@ -121,19 +118,16 @@ export const sendWebhook = internalAction({
 
     try {
       // Create a pending log entry
-      webhookLogId = await ctx.runMutation(
-        internal.webhooks.createWebhookLog,
-        {
-          transactionId: args.transactionId,
-          addressId: transaction.addressId,
-          userId: transaction.userId,
-          webhookUrl: address.webhookUrl,
-          status: "pending",
-          requestPayload: JSON.stringify(webhookPayload),
-          attemptNumber,
-          sentAt,
-        },
-      );
+      webhookLogId = await ctx.runMutation(internal.webhooks.createWebhookLog, {
+        transactionId: args.transactionId,
+        addressId: transaction.addressId,
+        userId: transaction.userId,
+        webhookUrl: address.webhookUrl,
+        status: "pending",
+        requestPayload: JSON.stringify(webhookPayload),
+        attemptNumber,
+        sentAt,
+      });
 
       // Send the webhook with verification code in header
       const response = await fetch(address.webhookUrl, {

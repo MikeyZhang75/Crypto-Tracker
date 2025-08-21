@@ -96,14 +96,14 @@ export function DataTable<TData, TValue>({
               const handleRowClick = (e: React.MouseEvent) => {
                 // Only navigate if clicking on empty space (not on interactive elements)
                 const target = e.target as HTMLElement;
-                const isInteractive = 
-                  target.closest('button') || 
-                  target.closest('a') || 
+                const isInteractive =
+                  target.closest("button") ||
+                  target.closest("a") ||
                   target.closest('[role="button"]') ||
-                  target.closest('input') ||
-                  target.closest('select') ||
-                  target.closest('textarea');
-                
+                  target.closest("input") ||
+                  target.closest("select") ||
+                  target.closest("textarea");
+
                 if (!isInteractive && url) {
                   router.push(url);
                 }
@@ -118,7 +118,10 @@ export function DataTable<TData, TValue>({
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>

@@ -35,6 +35,6 @@ primary_region = 'syd'
     protocol = 'http'
 
 [[vm]]
-  memory = '1gb'
-  cpu_kind = 'shared'
-  cpus = 4
+  memory = '4gb'
+  cpu_kind = 'performance'
+  cpus = 2

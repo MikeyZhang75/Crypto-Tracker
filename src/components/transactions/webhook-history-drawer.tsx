@@ -41,7 +41,7 @@ export function WebhookHistoryDrawer({
 
   // Fetch webhook logs when drawer opens
   const webhookLogs = useQuery(
-    api.transactions.getWebhookLogs,
+    api.webhooks.getWebhookLogs,
     open ? { transactionId } : "skip",
   );
 

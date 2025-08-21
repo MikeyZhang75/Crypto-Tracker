@@ -15,7 +15,11 @@ export default function AddressesPage() {
         <CreateAddressDialog />
       </div>
 
-      <DataTable columns={columns} data={addresses || []} />
+      <DataTable
+        columns={columns}
+        data={addresses || []}
+        getRowUrl={(row) => `/addresses/${row._id}/transactions`}
+      />
     </>
   );
 }

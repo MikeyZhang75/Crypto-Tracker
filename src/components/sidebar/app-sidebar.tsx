@@ -3,17 +3,14 @@
 import { useQuery } from "convex/react";
 import {
   AudioWaveform,
+  ChartBar,
   Command,
-  Frame,
   GalleryVerticalEnd,
-  Map as MapIcon,
-  PieChart,
-  SquareTerminal,
+  Wallet,
 } from "lucide-react";
 import type * as React from "react";
 
 import { NavMain } from "@/components/sidebar/nav-main";
-import { NavProjects } from "@/components/sidebar/nav-projects";
 import { NavUser } from "@/components/sidebar/nav-user";
 import { TeamSwitcher } from "@/components/sidebar/team-switcher";
 import {
@@ -46,27 +43,16 @@ const data = {
   ],
   navMain: [
     {
-      title: "Addresses",
-      url: "/addresses",
-      icon: SquareTerminal,
+      title: "Dashboard",
+      url: "/",
+      icon: ChartBar,
       isActive: true,
     },
-  ],
-  projects: [
     {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: MapIcon,
+      title: "Addresses",
+      url: "/addresses",
+      icon: Wallet,
+      isActive: true,
     },
   ],
 };
@@ -88,7 +74,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />

@@ -74,13 +74,12 @@ export default function SignUpPage() {
       });
 
       router.push("/");
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("already exists")) {
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("already exists")) {
         setError("An account with this email already exists.");
       } else {
         setError("Something went wrong. Please try again.");
       }
-      console.error("Sign up error:", error);
     } finally {
       setIsLoading(false);
     }

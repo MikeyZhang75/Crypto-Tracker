@@ -11,7 +11,7 @@ export const columns: ColumnDef<Doc<"cryptoAddresses">>[] = [
   {
     id: "index",
     header: "ID",
-    cell: ({ row }) => row.original._id.toString().slice(0, 8),
+    cell: ({ row }) => row.original._id.toString().slice(-8),
   },
   {
     accessorKey: "cryptoType",

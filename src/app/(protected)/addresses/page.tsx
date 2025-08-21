@@ -3,7 +3,7 @@
 import { useQuery } from "convex/react";
 import { columns } from "@/components/addresses/columns";
 import { CreateAddressDialog } from "@/components/addresses/create-address-dialog";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable } from "@/components/custom-ui/data-table";
 import { api } from "@/convex/_generated/api";
 
 export default function AddressesPage() {
@@ -15,10 +15,7 @@ export default function AddressesPage() {
         <CreateAddressDialog />
       </div>
 
-      <DataTable
-        columns={columns}
-        data={addresses || []}
-      />
+      <DataTable columns={columns} data={addresses || []} />
     </>
   );
 }

@@ -1,20 +1,10 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
 import { CRYPTO_SYMBOLS } from "@/lib/constants";
+import { generateVerificationCode } from "@/lib/generator";
 import { validateCryptoAddress } from "@/lib/validator";
 import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
-
-// Helper function to generate a secure verification code
-function generateVerificationCode(): string {
-  const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let code = "";
-  for (let i = 0; i < 32; i++) {
-    code += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return code;
-}
 
 export const list = query({
   args: {

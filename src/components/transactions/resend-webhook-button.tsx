@@ -38,6 +38,7 @@ export function ResendWebhookButton({
       onClick={handleResend}
       disabled={isLoading}
       title="Resend webhook"
+      type="button"
     >
       <IconRefresh className={`size-4 ${isLoading ? "animate-spin" : ""}`} />
       Resend

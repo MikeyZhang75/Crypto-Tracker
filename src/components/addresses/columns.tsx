@@ -1,74 +1,35 @@
 "use client";
 
-import { IconCheck, IconCopy } from "@tabler/icons-react";
+import { IconExternalLink } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { TokenIcon } from "@web3icons/react";
 import Link from "next/link";
-import { useState } from "react";
-import { toast } from "sonner";
+import { CopyableText } from "@/components/custom-ui/copyable-text";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { Badge } from "../ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../ui/tooltip";
+import { Button } from "../ui/button";
 import { AddressActions } from "./address-actions";
-import { EditableLabelCell } from "./editable-label-cell";
-
-function CopyableWebhookUrl({ url }: { url: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      toast.success("Webhook URL copied to clipboard");
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("Failed to copy URL");
-    }
-  };
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="group flex items-center gap-1 font-mono text-xs hover:bg-muted/50 rounded px-1 py-0.5 transition-colors"
-          >
-            <span className="select-text">{url}</span>
-            {copied ? (
-              <IconCheck className="h-3 w-3 text-green-500 flex-shrink-0" />
-            ) : (
-              <IconCopy className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-            )}
-          </button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Click to copy webhook URL</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
 
 export const columns: ColumnDef<Doc<"addresses">>[] = [
+  {
+    accessorKey: "label",
+    header: "Label",
+    cell: ({ row }) => <span>{row.original.label}</span>,
+  },
   {
     accessorKey: "address",
     header: "Address",
     cell: ({ row }) => {
       const address = row.original.address;
       return (
-        <Link
-          href={`/addresses/${encodeURIComponent(address)}/transactions`}
-          className="font-mono text-sm hover:underline inline-block"
-        >
-          {address}
-        </Link>
+        <CopyableText
+          text={address}
+          label="Click to copy address"
+          toastMessages={{
+            success: "Address copied to clipboard",
+            error: "Failed to copy address",
+          }}
+        />
       );
     },
   },
@@ -110,21 +71,36 @@ export const columns: ColumnDef<Doc<"addresses">>[] = [
     },
   },
   {
-    accessorKey: "label",
-    header: () => <div className="ml-3">Label</div>,
-    cell: ({ row }) => <EditableLabelCell address={row.original} />,
-  },
-  {
     accessorKey: "webhookUrl",
-    header: "Webhook",
+    header: "Webhook URL",
     cell: ({ row }) => {
       const webhookUrl = row.original.webhookUrl;
-      return <CopyableWebhookUrl url={webhookUrl} />;
+      return (
+        <CopyableText
+          text={webhookUrl}
+          label="Click to copy webhook URL"
+          toastMessages={{
+            success: "Webhook URL copied to clipboard",
+            error: "Failed to copy webhook URL",
+          }}
+        />
+      );
     },
   },
   {
     id: "actions",
-    header: "Actions",
-    cell: ({ row }) => <AddressActions address={row.original} />,
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2 justify-end">
+        <Link
+          href={`/addresses/${encodeURIComponent(row.original.address)}/transactions`}
+        >
+          <Button variant="outline" size="sm">
+            <IconExternalLink className="h-4 w-4" />
+            View
+          </Button>
+        </Link>
+        <AddressActions address={row.original} />
+      </div>
+    ),
   },
 ];

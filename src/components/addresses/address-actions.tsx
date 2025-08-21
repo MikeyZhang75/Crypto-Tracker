@@ -17,11 +17,11 @@ import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 
 interface AddressActionsProps {
-  address: Doc<"cryptoAddresses">;
+  address: Doc<"addresses">;
 }
 
 export function AddressActions({ address }: AddressActionsProps) {
-  const removeAddress = useMutation(api.cryptoAddresses.remove);
+  const removeAddress = useMutation(api.addresses.remove);
 
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this address?")) {

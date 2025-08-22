@@ -20,6 +20,28 @@ const schema = defineSchema({
     .index("by_user", ["userId"])
     .index("by_user_and_type", ["userId", "cryptoType"]),
 
+  // Track active scheduled functions to prevent duplicates
+  scheduledFunctions: defineTable({
+    addressId: v.id("addresses"),
+    userId: v.id("users"),
+    functionName: v.string(), // e.g., "processTransactionFetch"
+    status: v.union(
+      v.literal("active"),
+      v.literal("stopping"),
+      v.literal("stopped"),
+    ),
+    startedAt: v.number(),
+    lastRunAt: v.number(),
+    nextRunAt: v.optional(v.number()),
+    runCount: v.number(),
+    errorCount: v.optional(v.number()),
+    lastError: v.optional(v.string()),
+  })
+    .index("by_address", ["addressId"])
+    .index("by_user", ["userId"])
+    .index("by_address_and_function", ["addressId", "functionName"])
+    .index("by_status", ["status"]),
+
   transactions: defineTable({
     addressId: v.id("addresses"),
     userId: v.id("users"),

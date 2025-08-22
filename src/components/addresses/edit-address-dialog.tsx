@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { IconRefresh } from "@tabler/icons-react";
+import { IconRefresh, IconRotateClockwise } from "@tabler/icons-react";
 import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
 import { useEffect } from "react";
@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -32,14 +33,35 @@ import type { Doc } from "@/convex/_generated/dataModel";
 import { generateVerificationCode } from "@/lib/generator";
 
 // Form schema for editing address
-const formSchema = z.object({
-  label: z.string().optional(),
-  webhookUrl: z
-    .string()
-    .min(1, "Webhook URL is required")
-    .url("Invalid URL format"),
-  webhookVerificationCode: z.string().optional(),
-});
+const formSchema = z
+  .object({
+    label: z.string().optional(),
+    webhookEnabled: z.boolean(),
+    webhookUrl: z.string().optional(),
+    webhookVerificationCode: z.string().optional(),
+    webhookHeaderName: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    // Validate webhook fields when enabled
+    if (data.webhookEnabled) {
+      if (!data.webhookUrl) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Webhook URL is required when webhook is enabled",
+          path: ["webhookUrl"],
+        });
+      } else if (
+        !data.webhookUrl.startsWith("http://") &&
+        !data.webhookUrl.startsWith("https://")
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Webhook URL must be a valid URL",
+          path: ["webhookUrl"],
+        });
+      }
+    }
+  });
 
 interface EditAddressDialogProps {
   address: Doc<"addresses">;
@@ -58,8 +80,11 @@ export function EditAddressDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       label: address.label || "",
-      webhookUrl: address.webhookUrl,
-      webhookVerificationCode: address.webhookVerificationCode || "",
+      webhookEnabled: !!address.webhook,
+      webhookUrl: address.webhook?.url || "",
+      webhookVerificationCode: address.webhook?.verificationCode || "",
+      webhookHeaderName:
+        address.webhook?.headerName || "X-Webhook-Verification",
     },
   });
 
@@ -67,21 +92,37 @@ export function EditAddressDialog({
   useEffect(() => {
     form.reset({
       label: address.label || "",
-      webhookUrl: address.webhookUrl,
-      webhookVerificationCode: address.webhookVerificationCode || "",
+      webhookEnabled: !!address.webhook,
+      webhookUrl: address.webhook?.url || "",
+      webhookVerificationCode: address.webhook?.verificationCode || "",
+      webhookHeaderName:
+        address.webhook?.headerName || "X-Webhook-Verification",
     });
-  }, [address, form]);
+  }, [address, form.reset]);
+
+  const watchWebhookEnabled = form.watch("webhookEnabled");
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      const webhook =
+        values.webhookEnabled && values.webhookUrl
+          ? {
+              url: values.webhookUrl,
+              verificationCode:
+                values.webhookVerificationCode ||
+                address.webhook?.verificationCode ||
+                generateVerificationCode(),
+              headerName:
+                values.webhookHeaderName ||
+                address.webhook?.headerName ||
+                "X-Webhook-Verification",
+            }
+          : null; // null to clear webhook if disabled
+
       await updateAddress({
         id: address._id,
         label: values.label || undefined,
-        webhookUrl: values.webhookUrl,
-        webhookVerificationCode:
-          values.webhookVerificationCode !== address.webhookVerificationCode
-            ? values.webhookVerificationCode
-            : undefined,
+        webhook,
       });
       toast.success("Address updated successfully");
       form.reset();
@@ -114,6 +155,12 @@ export function EditAddressDialog({
     const newCode = generateVerificationCode();
     form.setValue("webhookVerificationCode", newCode);
     toast.success("New verification code generated");
+  };
+
+  // Handle reset header name to default
+  const handleResetHeaderName = () => {
+    form.setValue("webhookHeaderName", "X-Webhook-Verification");
+    toast.success("Header name reset to default");
   };
 
   return (
@@ -153,60 +200,120 @@ export function EditAddressDialog({
 
               <FormField
                 control={form.control}
-                name="webhookUrl"
-                render={({ field, fieldState }) => (
-                  <FormItem>
-                    <FormLabel>Webhook URL</FormLabel>
+                name="webhookEnabled"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-1">
                     <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="https://example.com/webhook"
-                        type="url"
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    {!fieldState.error && (
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Enable Webhook Notifications</FormLabel>
                       <FormDescription>
-                        Webhook URL to receive transaction notifications
+                        Receive transaction notifications via webhook
                       </FormDescription>
-                    )}
-                    <FormMessage />
+                    </div>
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="webhookVerificationCode"
-                render={({ field, fieldState }) => (
-                  <FormItem>
-                    <FormLabel>Verification Code</FormLabel>
-                    <div className="flex gap-2">
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="Enter verification code"
-                          className="font-mono"
-                        />
-                      </FormControl>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={handleRegenerateCode}
-                        title="Generate new verification code"
-                      >
-                        <IconRefresh className="size-4" />
-                      </Button>
-                    </div>
-                    {!fieldState.error && (
-                      <FormDescription>
-                        Code used to authenticate webhook requests
-                      </FormDescription>
+              {watchWebhookEnabled && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="webhookUrl"
+                    render={({ field, fieldState }) => (
+                      <FormItem>
+                        <FormLabel>Webhook URL</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="https://example.com/webhook"
+                            type="url"
+                          />
+                        </FormControl>
+                        {!fieldState.error && (
+                          <FormDescription>
+                            URL to receive transaction notifications
+                          </FormDescription>
+                        )}
+                        <FormMessage />
+                      </FormItem>
                     )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="webhookVerificationCode"
+                    render={({ field, fieldState }) => (
+                      <FormItem>
+                        <FormLabel>Verification Code</FormLabel>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="Enter verification code"
+                              className="font-mono"
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={handleRegenerateCode}
+                            title="Generate new verification code"
+                          >
+                            <IconRefresh className="size-4" />
+                          </Button>
+                        </div>
+                        {!fieldState.error && (
+                          <FormDescription>
+                            Code used to authenticate webhook requests
+                          </FormDescription>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="webhookHeaderName"
+                    render={({ field, fieldState }) => (
+                      <FormItem>
+                        <FormLabel>Verification Header Name</FormLabel>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="X-Webhook-Verification"
+                              className="font-mono"
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={handleResetHeaderName}
+                            title="Reset to default header name"
+                          >
+                            <IconRotateClockwise className="size-4" />
+                          </Button>
+                        </div>
+                        {!fieldState.error && (
+                          <FormDescription>
+                            Custom HTTP header name for the verification code
+                            (default: X-Webhook-Verification)
+                          </FormDescription>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
             </div>
 
             <DialogFooter>

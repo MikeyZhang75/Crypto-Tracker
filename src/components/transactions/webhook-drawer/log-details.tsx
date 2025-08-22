@@ -67,9 +67,9 @@ export function LogDetails({
           )}
 
           {/* Status Header */}
-          <StatusHeader 
-            log={log} 
-            formattedDate={formattedDate} 
+          <StatusHeader
+            log={log}
+            formattedDate={formattedDate}
             getStatusColor={getStatusColor}
           />
 
@@ -80,17 +80,11 @@ export function LogDetails({
           {log.errorMessage && <ErrorSection errorMessage={log.errorMessage} />}
 
           {/* Request Payload */}
-          <JsonViewer
-            title="Request Payload"
-            content={log.requestPayload}
-          />
+          <JsonViewer title="Request Payload" content={log.requestPayload} />
 
           {/* Response Body */}
           {log.responseBody && (
-            <JsonViewer
-              title="Response Body"
-              content={log.responseBody}
-            />
+            <JsonViewer title="Response Body" content={log.responseBody} />
           )}
         </div>
         <ScrollBar orientation="vertical" />
@@ -110,7 +104,8 @@ function NoSelectionState() {
           <div className="space-y-2">
             <p className="text-base font-medium">No log selected</p>
             <p className="text-sm text-muted-foreground max-w-[250px]">
-              Select a webhook attempt from the list to view detailed information
+              Select a webhook attempt from the list to view detailed
+              information
             </p>
           </div>
         </div>
@@ -119,37 +114,26 @@ function NoSelectionState() {
   );
 }
 
-function StatusHeader({ 
-  log, 
-  formattedDate, 
-  getStatusColor 
-}: { 
-  log: Doc<"webhookLogs">; 
+function StatusHeader({
+  log,
+  formattedDate,
+  getStatusColor,
+}: {
+  log: Doc<"webhookLogs">;
   formattedDate: string;
   getStatusColor: (status: Doc<"webhookLogs">["status"]) => string;
 }) {
   return (
     <div className="rounded-xl bg-muted/30 p-5 space-y-3">
       <div className="flex flex-wrap items-center gap-3">
-        <Badge
-          variant="outline"
-          className="h-7 px-3 gap-2 text-sm"
-        >
+        <Badge variant="outline" className="h-7 px-3 gap-2 text-sm">
           <span
-            className={cn(
-              "size-2 rounded-full",
-              getStatusColor(log.status),
-            )}
+            className={cn("size-2 rounded-full", getStatusColor(log.status))}
             aria-hidden="true"
           />
-          {log.statusCode
-            ? `HTTP ${log.statusCode}`
-            : log.status.toUpperCase()}
+          {log.statusCode ? `HTTP ${log.statusCode}` : log.status.toUpperCase()}
         </Badge>
-        <Badge
-          variant="secondary"
-          className="h-7 px-3 font-mono text-sm"
-        >
+        <Badge variant="secondary" className="h-7 px-3 font-mono text-sm">
           Attempt #{log.attemptNumber}
         </Badge>
         <span className="text-sm text-muted-foreground ml-auto">
@@ -174,11 +158,7 @@ function WebhookUrlSection({ webhookUrl }: { webhookUrl: string }) {
           className="h-8 px-3 text-xs gap-1.5"
           asChild
         >
-          <a
-            href={webhookUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <a href={webhookUrl} target="_blank" rel="noopener noreferrer">
             <IconExternalLink className="h-3.5 w-3.5" />
             Open URL
           </a>
@@ -198,9 +178,7 @@ function ErrorSection({ errorMessage }: { errorMessage: string }) {
     <div className="space-y-3">
       <h3 className="text-sm font-semibold flex items-center gap-2">
         <IconX className="h-4 w-4 text-destructive" />
-        <span className="text-destructive">
-          Error Details
-        </span>
+        <span className="text-destructive">Error Details</span>
       </h3>
       <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-4">
         <code className="text-xs text-destructive break-words block leading-relaxed">

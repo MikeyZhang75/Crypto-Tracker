@@ -24,6 +24,23 @@ import {
 } from "@/components/ui/sidebar";
 import { api } from "@/convex/_generated/api";
 
+// Animation configuration following Material Design guidelines
+export const ANIMATION_CONFIG = {
+  // Desktop: 200ms, Mobile: 300ms (Material Design standards)
+  duration: 0.2, // 200ms for desktop
+  // Easing curves for different animation types
+  easing: {
+    enter: [0, 0, 0.2, 1], // ease-out (decelerate) for entering
+    exit: [0.4, 0, 1, 1], // ease-in (accelerate) for exiting
+    standard: [0.4, 0, 0.2, 1], // ease-in-out for general transitions
+  },
+  spring: {
+    damping: 20,
+    stiffness: 300,
+    mass: 0.8,
+  },
+} as const;
+
 // This is sample data.
 const data = {
   teams: [
@@ -79,16 +96,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           ) : (
             <motion.div
               key="user"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{
+                duration: ANIMATION_CONFIG.duration,
+                ease: ANIMATION_CONFIG.easing.enter,
+              }}
             >
               <NavUser
                 user={{
                   name: currentUser?.name || "Unknown User",
                   email: currentUser?.email || "Unknown Email",
-                  avatar: currentUser?.image || "/avatars/default.jpg",
                 }}
               />
             </motion.div>

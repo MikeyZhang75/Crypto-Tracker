@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useMemo } from "react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -131,7 +132,7 @@ function generateBreadcrumbs(pathname: string) {
 
 export function DynamicBreadcrumb() {
   const pathname = usePathname();
-  const breadcrumbs = generateBreadcrumbs(pathname);
+  const breadcrumbs = useMemo(() => generateBreadcrumbs(pathname), [pathname]);
 
   // Don't render breadcrumb if we're at the root or have no breadcrumbs
   if (pathname === "/" || breadcrumbs.length === 0) {

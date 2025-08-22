@@ -12,11 +12,14 @@ const schema = defineSchema({
     address: v.string(),
     label: v.optional(v.string()),
     webhook: v.optional(
-      v.object({
-        url: v.string(),
-        verificationCode: v.string(),
-        headerName: v.string(), // Custom header name for webhook verification
-      }),
+      v.union(
+        v.object({
+          url: v.string(),
+          verificationCode: v.string(),
+          headerName: v.string(), // Custom header name for webhook verification
+        }),
+        v.null(),
+      ),
     ),
     isListening: v.boolean(),
     createdAt: v.number(),

@@ -12,6 +12,7 @@ import type * as React from "react";
 
 import { NavMain } from "@/components/sidebar/nav-main";
 import { NavUser } from "@/components/sidebar/nav-user";
+import { NavUserSkeleton } from "@/components/sidebar/nav-user-skeleton";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Sidebar,
@@ -60,13 +61,6 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const currentUser = useQuery(api.users.getCurrentUser);
 
-  // Create user object with fallback data
-  const user = {
-    name: currentUser?.name || "Unknown User",
-    email: currentUser?.email || "Unknown Email",
-    avatar: currentUser?.image || "/avatars/default.jpg",
-  };
-
   return (
     <Sidebar collapsible="icon" {...props}>
       {/* <SidebarHeader>
@@ -78,7 +72,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <ThemeToggle />
         <SidebarSeparator />
-        <NavUser user={user} />
+        {currentUser === undefined ? (
+          <NavUserSkeleton />
+        ) : (
+          <NavUser
+            user={{
+              name: currentUser?.name || "Unknown User",
+              email: currentUser?.email || "Unknown Email",
+              avatar: currentUser?.image || "/avatars/default.jpg",
+            }}
+          />
+        )}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

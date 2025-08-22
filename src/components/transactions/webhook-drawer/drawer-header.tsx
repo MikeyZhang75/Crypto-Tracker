@@ -11,7 +11,10 @@ interface DrawerHeaderProps {
   transactionId: Id<"transactions">;
 }
 
-export function DrawerHeader({ webhookLogs, transactionId }: DrawerHeaderProps) {
+export function DrawerHeader({
+  webhookLogs,
+  transactionId,
+}: DrawerHeaderProps) {
   return (
     <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center justify-between px-6 py-5">

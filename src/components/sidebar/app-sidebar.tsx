@@ -93,7 +93,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <AnimatePresence mode="wait">
           {currentUser === undefined ? (
             <NavUserSkeleton key="skeleton" />
-          ) : (
+          ) : currentUser === null ? // User is logged out or no user found
+          null : (
             <motion.div
               key="user"
               initial={{ opacity: 0 }}
@@ -105,8 +106,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <NavUser
                 user={{
-                  name: currentUser?.name || "Unknown User",
-                  email: currentUser?.email || "Unknown Email",
+                  name: currentUser.name,
+                  email: currentUser.email,
                 }}
               />
             </motion.div>

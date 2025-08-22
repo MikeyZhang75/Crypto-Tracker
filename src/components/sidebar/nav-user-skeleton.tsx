@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -7,7 +8,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function NavUserSkeleton() {
+export const NavUserSkeleton = React.memo(function NavUserSkeleton() {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -27,4 +28,4 @@ export function NavUserSkeleton() {
       </SidebarMenuItem>
     </SidebarMenu>
   );
-}
+});

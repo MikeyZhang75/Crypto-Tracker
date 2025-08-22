@@ -202,8 +202,8 @@ export function CreateAddressDialog() {
         webhook,
       });
       toast.success("Address added successfully");
-      form.reset();
       setOpen(false);
+      // Form will be reset after dialog close animation via handleOpenChange
     } catch (error) {
       if (error instanceof ConvexError) {
         const errorMessage = error.data.message || "Failed to add address";
@@ -223,7 +223,10 @@ export function CreateAddressDialog() {
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (!newOpen) {
-      form.reset();
+      // Delay form reset to prevent visual flicker during close animation
+      setTimeout(() => {
+        form.reset();
+      }, 300); // Match dialog animation duration
     }
   };
 

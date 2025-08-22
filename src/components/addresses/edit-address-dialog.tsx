@@ -125,8 +125,8 @@ export function EditAddressDialog({
         webhook,
       });
       toast.success("Address updated successfully");
-      form.reset();
       onOpenChange(false);
+      // Form will be reset after dialog close animation via handleOpenChange
     } catch (error) {
       if (error instanceof ConvexError) {
         const errorMessage = error.data.message || "Failed to update address";
@@ -146,7 +146,10 @@ export function EditAddressDialog({
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);
     if (!newOpen) {
-      form.reset();
+      // Delay form reset to prevent visual flicker during close animation
+      setTimeout(() => {
+        form.reset();
+      }, 300); // Match dialog animation duration
     }
   };
 

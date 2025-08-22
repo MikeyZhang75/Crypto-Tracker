@@ -99,7 +99,8 @@ export const send = internalAction({
     // Prepare the webhook payload
     const webhookPayload = {
       transactionId: transaction.transactionId,
-      cryptoType: transaction.cryptoType,
+      token: transaction.token,
+      network: transaction.network,
       from: transaction.from,
       to: transaction.to,
       amount: transaction.amount,

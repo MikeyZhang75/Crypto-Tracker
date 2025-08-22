@@ -60,12 +60,12 @@ export const columns: ColumnDef<Doc<"transactions">>[] = [
     header: "Amount",
     cell: ({ row }) => {
       const amount = row.original.amount;
-      const cryptoType = row.original.cryptoType;
+      const token = row.original.token;
       // Convert from smallest unit (for USDT, it's in 6 decimals)
       const displayAmount = (Number.parseInt(amount, 10) / 1000000).toFixed(6);
       return (
         <span className="font-medium">
-          {displayAmount} {cryptoType}
+          {displayAmount} {token}
         </span>
       );
     },

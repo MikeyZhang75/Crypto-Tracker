@@ -12,7 +12,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { CryptoSelector } from "@/components/crypto/crypto-selector";
+import { NetworkSelector } from "@/components/crypto/network-selector";
+import { TokenSelector } from "@/components/crypto/token-selector";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -36,17 +37,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
 import {
-  CRYPTO_SYMBOLS,
-  type CryptoType,
-  getCryptoInfo,
+  getTokenNetworkInfo,
+  SUPPORTED_NETWORKS,
+  SUPPORTED_TOKENS,
 } from "@/lib/constants";
 import { generateVerificationCode } from "@/lib/generator";
-import { validateCryptoAddress } from "@/lib/validator";
+import { validateTokenNetworkAddress } from "@/lib/validator";
 
-// Form schema with dynamic validation based on selected crypto type
+// Form schema with dynamic validation based on selected token and network
 const formSchema = z
   .object({
-    cryptoType: z.enum(CRYPTO_SYMBOLS),
+    token: z.enum(SUPPORTED_TOKENS),
+    network: z.enum(SUPPORTED_NETWORKS),
     address: z.string().min(1, "Address is required"),
     label: z.string().optional(),
     webhookEnabled: z.boolean().optional(),
@@ -55,16 +57,16 @@ const formSchema = z
     webhookHeaderName: z.string().optional(),
   })
   .superRefine((data, ctx) => {
-    // Validate address based on selected crypto type
-    const { cryptoType, address, webhookEnabled, webhookUrl } = data;
+    // Validate address based on selected token and network
+    const { token, network, address, webhookEnabled, webhookUrl } = data;
 
-    if (address) {
-      const isValid = validateCryptoAddress(cryptoType, address);
+    if (address && token && network) {
+      const isValid = validateTokenNetworkAddress(token, network, address);
 
       if (!isValid) {
         ctx.addIssue({
           code: "custom",
-          message: `Invalid ${cryptoType} address format`,
+          message: `Invalid ${token} address format for ${network} network`,
           path: ["address"],
         });
       }
@@ -98,7 +100,8 @@ export function CreateAddressDialog() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      cryptoType: "BTC",
+      token: "USDT",
+      network: "TRON",
       address: "",
       label: "",
       webhookEnabled: false,
@@ -108,21 +111,24 @@ export function CreateAddressDialog() {
     },
   });
 
-  // Watch the cryptoType field to update validation schema
-  const watchedCryptoType = form.watch("cryptoType");
+  // Watch the token and network fields to update validation schema
+  const watchedToken = form.watch("token");
+  const watchedNetwork = form.watch("network");
   const watchWebhookEnabled = form.watch("webhookEnabled");
 
-  // Handle crypto type changes
-  const handleCryptoTypeChange = (value: CryptoType) => {
-    form.setValue("cryptoType", value);
-    // Clear address field when crypto type changes
+  // Handle token/network changes
+  const handleTokenChange = (value: string) => {
+    form.setValue("token", value as typeof SUPPORTED_TOKENS[number]);
+    // Clear address field when selection changes
     form.setValue("address", "");
-    // Clear any existing errors
     form.clearErrors("address");
-    // Trigger revalidation if there was a previous value
-    if (form.formState.isSubmitted) {
-      form.trigger("address");
-    }
+  };
+
+  const handleNetworkChange = (value: string) => {
+    form.setValue("network", value as typeof SUPPORTED_NETWORKS[number]);
+    // Clear address field when selection changes
+    form.setValue("address", "");
+    form.clearErrors("address");
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -138,7 +144,8 @@ export function CreateAddressDialog() {
           : undefined;
 
       await addAddress({
-        cryptoType: values.cryptoType,
+        token: values.token,
+        network: values.network,
         address: values.address,
         label: values.label || undefined,
         webhook,
@@ -201,24 +208,40 @@ export function CreateAddressDialog() {
             </DialogHeader>
 
             <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="cryptoType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cryptocurrency</FormLabel>
-                    <FormControl>
-                      <CryptoSelector
-                        value={field.value}
-                        onValueChange={(value) => {
-                          handleCryptoTypeChange(value as CryptoType);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="token"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Token</FormLabel>
+                      <FormControl>
+                        <TokenSelector
+                          value={field.value}
+                          onValueChange={handleTokenChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="network"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Network</FormLabel>
+                      <FormControl>
+                        <NetworkSelector
+                          value={field.value}
+                          onValueChange={handleNetworkChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}
@@ -230,7 +253,8 @@ export function CreateAddressDialog() {
                       <Input
                         {...field}
                         placeholder={
-                          getCryptoInfo(watchedCryptoType)?.placeholder
+                          getTokenNetworkInfo(watchedToken, watchedNetwork)
+                            ?.placeholder
                         }
                         className="font-mono text-sm"
                         autoComplete="off"

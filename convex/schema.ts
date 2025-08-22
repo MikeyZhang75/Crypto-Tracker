@@ -1,14 +1,17 @@
 import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { CRYPTO_SYMBOLS } from "@/lib/constants";
+import { SUPPORTED_TOKENS, SUPPORTED_NETWORKS } from "@/lib/constants";
 
 const schema = defineSchema({
   ...authTables,
 
   addresses: defineTable({
     userId: v.id("users"),
-    cryptoType: v.union(...CRYPTO_SYMBOLS.map((symbol) => v.literal(symbol))),
+    token: v.union(...SUPPORTED_TOKENS.map((token) => v.literal(token))),
+    network: v.union(
+      ...SUPPORTED_NETWORKS.map((network) => v.literal(network)),
+    ),
     address: v.string(),
     label: v.optional(v.string()),
     webhook: v.optional(
@@ -26,7 +29,7 @@ const schema = defineSchema({
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
-    .index("by_user_and_type", ["userId", "cryptoType"]),
+    .index("by_user_and_token_network", ["userId", "token", "network"]),
 
   // Track active scheduled functions to prevent duplicates
   scheduledFunctions: defineTable({
@@ -54,7 +57,10 @@ const schema = defineSchema({
     addressId: v.id("addresses"),
     userId: v.id("users"),
     transactionId: v.string(),
-    cryptoType: v.union(...CRYPTO_SYMBOLS.map((symbol) => v.literal(symbol))),
+    token: v.union(...SUPPORTED_TOKENS.map((token) => v.literal(token))),
+    network: v.union(
+      ...SUPPORTED_NETWORKS.map((network) => v.literal(network)),
+    ),
     from: v.string(),
     to: v.string(),
     amount: v.string(),

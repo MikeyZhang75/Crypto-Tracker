@@ -21,6 +21,8 @@ export function TokenSelector({
   onValueChange,
   defaultValue = "USDT",
 }: TokenSelectorProps) {
+  // Show all supported tokens - let the user select any token
+  // The network selector will update based on the token selection
   return (
     <Select
       value={value}

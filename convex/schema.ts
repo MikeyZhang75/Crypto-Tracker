@@ -1,7 +1,7 @@
 import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { SUPPORTED_TOKENS, SUPPORTED_NETWORKS } from "@/lib/constants";
+import { SUPPORTED_NETWORKS, SUPPORTED_TOKENS } from "@/lib/constants";
 
 const schema = defineSchema({
   ...authTables,

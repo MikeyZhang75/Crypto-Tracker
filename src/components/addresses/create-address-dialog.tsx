@@ -8,7 +8,7 @@ import {
 } from "@tabler/icons-react";
 import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -133,34 +133,53 @@ export function CreateAddressDialog() {
   const watchedNetwork = form.watch("network");
   const watchWebhookEnabled = form.watch("webhookEnabled");
 
-  // Handle token/network changes
+  // Memoize placeholder text to avoid repeated function calls
+  const addressPlaceholder = useMemo(
+    () =>
+      getTokenNetworkInfo(watchedToken, watchedNetwork)?.placeholder ||
+      "Enter address",
+    [watchedToken, watchedNetwork],
+  );
+
+  // Handle token/network changes with batch updates to prevent race conditions
   const handleTokenChange = (value: string) => {
     const newToken = value as TokenType;
-    form.setValue("token", newToken);
+    const validNetworks = getValidNetworksForToken(newToken);
+
+    // Defensive check: ensure we have valid networks
+    if (validNetworks.length === 0) {
+      console.error(`No valid networks found for token ${newToken}`);
+      toast.error(`Configuration error: No networks available for ${newToken}`);
+      return;
+    }
 
     // Check if current network is still valid for new token
     const currentNetwork = form.getValues("network");
-    const validNetworks = getValidNetworksForToken(newToken);
+    const newNetwork = validNetworks.includes(currentNetwork)
+      ? currentNetwork
+      : validNetworks[0];
 
-    // If current network is not valid for new token, select the first valid network
-    if (!validNetworks.includes(currentNetwork)) {
-      form.setValue("network", validNetworks[0]);
-    }
+    // Batch update all fields to prevent intermediate invalid states
+    form.setValue("token", newToken, { shouldValidate: false });
+    form.setValue("network", newNetwork, { shouldValidate: false });
+    form.setValue("address", "", { shouldValidate: false });
 
-    // Clear address field when selection changes
-    form.setValue("address", "");
-    form.clearErrors("address");
-    form.clearErrors("network");
+    // Clear errors and trigger validation after all updates
+    form.clearErrors(["token", "network", "address"]);
+    // Trigger validation only after all values are set
+    form.trigger(["token", "network"]);
   };
 
   const handleNetworkChange = (value: string) => {
     const newNetwork = value as NetworkType;
-    form.setValue("network", newNetwork);
 
-    // Clear address field when selection changes
-    form.setValue("address", "");
-    form.clearErrors("address");
-    form.clearErrors("network");
+    // Batch update to prevent race conditions
+    form.setValue("network", newNetwork, { shouldValidate: false });
+    form.setValue("address", "", { shouldValidate: false });
+
+    // Clear errors and trigger validation
+    form.clearErrors(["network", "address"]);
+    form.trigger("network");
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -285,10 +304,7 @@ export function CreateAddressDialog() {
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder={
-                          getTokenNetworkInfo(watchedToken, watchedNetwork)
-                            ?.placeholder
-                        }
+                        placeholder={addressPlaceholder}
                         className="font-mono text-sm"
                         autoComplete="off"
                       />
@@ -427,7 +443,6 @@ export function CreateAddressDialog() {
                         {!fieldState.error && (
                           <FormDescription>
                             Custom HTTP header name for the verification code
-                            (default: X-Webhook-Verification)
                           </FormDescription>
                         )}
                         <FormMessage />

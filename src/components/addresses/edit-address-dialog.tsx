@@ -305,7 +305,6 @@ export function EditAddressDialog({
                         {!fieldState.error && (
                           <FormDescription>
                             Custom HTTP header name for the verification code
-                            (default: X-Webhook-Verification)
                           </FormDescription>
                         )}
                         <FormMessage />

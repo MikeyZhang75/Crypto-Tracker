@@ -1,4 +1,3 @@
-import { env } from "@/lib/env";
 import type { EtherscanApiResponse, TronGridTRC20Response } from "./types";
 
 // USDT contract address on Tron mainnet
@@ -12,6 +11,11 @@ export async function fetchTronUSDTTransfers(
   try {
     // TronGrid API endpoint for TRC20 transactions
     const apiUrl = `https://api.trongrid.io/v1/accounts/${address}/transactions/trc20`;
+    const apiKey = process.env.TRONGRID_API_KEY;
+
+    if (!apiKey) {
+      throw new Error("TRONGRID_API_KEY is not set");
+    }
 
     const params = new URLSearchParams({
       limit: "10",
@@ -26,7 +30,7 @@ export async function fetchTronUSDTTransfers(
       method: "GET",
       headers: {
         Accept: "application/json",
-        "TRON-PRO-API-KEY": env.TRONGRID_API_KEY,
+        "TRON-PRO-API-KEY": apiKey,
       },
     });
 
@@ -49,15 +53,20 @@ export async function fetchEthereumETHTransfers(
   lastTimestamp = 0,
 ) {
   try {
-    const apiKey = env.ETHERSCAN_API_KEY;
+    const apiKey = process.env.ETHERSCAN_API_KEY;
+
+    if (!apiKey) {
+      throw new Error("ETHERSCAN_API_KEY is not set");
+    }
+
     const apiUrl = "https://api.etherscan.io/api";
-    
+
     // If we have a lastTimestamp, first convert it to a block number
     let startBlock = "0";
     if (lastTimestamp > 0) {
       // Convert timestamp to Unix seconds (Etherscan expects seconds, not milliseconds)
       const timestampInSeconds = Math.floor(lastTimestamp / 1000);
-      
+
       // Get the block number for the given timestamp
       const blockParams = new URLSearchParams({
         module: "block",
@@ -66,13 +75,15 @@ export async function fetchEthereumETHTransfers(
         closest: "after", // Get the block after this timestamp
         apikey: apiKey,
       });
-      
+
       const blockResponse = await fetch(`${apiUrl}?${blockParams.toString()}`);
       if (blockResponse.ok) {
         const blockData = await blockResponse.json();
         if (blockData.status === "1" && blockData.result) {
           startBlock = blockData.result;
-          console.log(`Using startBlock ${startBlock} for timestamp ${lastTimestamp}`);
+          console.log(
+            `Using startBlock ${startBlock} for timestamp ${lastTimestamp}`,
+          );
         }
       }
     }
@@ -117,8 +128,7 @@ export async function fetchEthereumETHTransfers(
     // No need to filter by timestamp since we're using startBlock
     const filteredTransactions = data.result.filter((tx) => {
       return (
-        tx.to.toLowerCase() === address.toLowerCase() &&
-        tx.isError === "0" // Only successful transactions
+        tx.to.toLowerCase() === address.toLowerCase() && tx.isError === "0" // Only successful transactions
       );
     });
 

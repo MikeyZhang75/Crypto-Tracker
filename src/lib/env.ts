@@ -5,8 +5,6 @@ export const env = createEnv({
   server: {
     CONVEX_SELF_HOSTED_URL: z.string().min(1).optional(),
     CONVEX_SELF_HOSTED_ADMIN_KEY: z.string().min(1).optional(),
-    ETHERSCAN_API_KEY: z.string().min(1),
-    TRONGRID_API_KEY: z.string().min(1),
   },
 
   /**

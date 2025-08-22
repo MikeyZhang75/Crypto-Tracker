@@ -7,22 +7,31 @@ import {
 // Define auth routes (sign-in and sign-up pages)
 const isAuthRoute = createRouteMatcher(["/sign-in", "/sign-up"]);
 
-export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
-  // If user is on an auth page and is already authenticated,
-  // redirect them to the dashboard or protected area
-  if (isAuthRoute(request) && (await convexAuth.isAuthenticated())) {
-    return nextjsMiddlewareRedirect(request, "/");
-  }
+export default convexAuthNextjsMiddleware(
+  async (request, { convexAuth }) => {
+    // If user is on an auth page and is already authenticated,
+    // redirect them to the dashboard or protected area
+    if (isAuthRoute(request) && (await convexAuth.isAuthenticated())) {
+      return nextjsMiddlewareRedirect(request, "/");
+    }
 
-  // If the route is not public and user is not authenticated,
-  // redirect them to the sign-in page
-  if (!isAuthRoute(request) && !(await convexAuth.isAuthenticated())) {
-    return nextjsMiddlewareRedirect(request, "/sign-in");
-  }
+    // If the route is not public and user is not authenticated,
+    // redirect them to the sign-in page
+    if (!isAuthRoute(request) && !(await convexAuth.isAuthenticated())) {
+      return nextjsMiddlewareRedirect(request, "/sign-in");
+    }
 
-  // Allow the request to proceed
-  return;
-});
+    // Allow the request to proceed
+    return;
+  },
+  {
+    // Configure cookie settings for session persistence
+    // Set max age to 30 days (in seconds) to persist the session
+    cookieConfig: {
+      maxAge: 30 * 24 * 60 * 60, // 30 days in seconds
+    },
+  }
+);
 
 export const config = {
   // The following matcher runs middleware on all routes

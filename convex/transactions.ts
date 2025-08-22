@@ -179,8 +179,28 @@ export const storeTransactionsAndReschedule = internalMutation({
     error: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    if (!args.shouldContinue) {
+    // Find the scheduled function tracking record
+    const scheduledFunction = await ctx.db
+      .query("scheduledFunctions")
+      .withIndex("by_address_and_function", (q) =>
+        q.eq("addressId", args.addressId).eq("functionName", "processTransactionFetch")
+      )
+      .filter((q) => q.or(
+        q.eq(q.field("status"), "active"),
+        q.eq(q.field("status"), "stopping")
+      ))
+      .first();
+
+    if (!args.shouldContinue || scheduledFunction?.status === "stopping") {
       console.log(`Stopping scheduled function for address ${args.addressId}`);
+      
+      // Mark the scheduled function as stopped
+      if (scheduledFunction) {
+        await ctx.db.patch(scheduledFunction._id, {
+          status: "stopped",
+          lastRunAt: Date.now(),
+        });
+      }
       return;
     }
 
@@ -190,6 +210,14 @@ export const storeTransactionsAndReschedule = internalMutation({
 
     if (!address) {
       console.log("Address not found, stopping");
+      
+      // Mark the scheduled function as stopped if address is deleted
+      if (scheduledFunction) {
+        await ctx.db.patch(scheduledFunction._id, {
+          status: "stopped",
+          lastRunAt: Date.now(),
+        });
+      }
       return;
     }
 
@@ -240,13 +268,30 @@ export const storeTransactionsAndReschedule = internalMutation({
       });
     }
 
-    // Schedule the next check
-    const delay = args.error ? 30000 : 5000; // 30s on error, 5s normally
-    await ctx.scheduler.runAfter(
-      delay,
-      internal.transactions.processTransactionFetch,
-      { addressId: args.addressId },
-    );
+    // Update the scheduled function tracking record and schedule next run
+    if (scheduledFunction && scheduledFunction.status === "active") {
+      const now = Date.now();
+      const delay = args.error ? 30000 : 5000; // 30s on error, 5s normally
+      
+      await ctx.db.patch(scheduledFunction._id, {
+        lastRunAt: now,
+        nextRunAt: now + delay,
+        runCount: scheduledFunction.runCount + 1,
+        errorCount: args.error 
+          ? (scheduledFunction.errorCount || 0) + 1 
+          : scheduledFunction.errorCount,
+        lastError: args.error ? "Failed to fetch transactions" : undefined,
+      });
+      
+      // Schedule the next check
+      await ctx.scheduler.runAfter(
+        delay,
+        internal.transactions.processTransactionFetch,
+        { addressId: args.addressId },
+      );
+    } else {
+      console.log(`No active scheduled function found for address ${args.addressId}, not rescheduling`);
+    }
   },
 });
 

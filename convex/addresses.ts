@@ -6,6 +6,41 @@ import { validateCryptoAddress } from "@/lib/validator";
 import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 
+export const getScheduledFunctionStatus = query({
+  args: {
+    addressId: v.id("addresses"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError({
+        code: "UNAUTHORIZED",
+        message: "You must be authenticated to view scheduled function status",
+      });
+    }
+
+    // Verify the address belongs to the user
+    const address = await ctx.db.get(args.addressId);
+    if (!address || address.userId !== userId) {
+      throw new ConvexError({
+        code: "FORBIDDEN",
+        message: "You don't have permission to view this address",
+      });
+    }
+
+    // Get the active scheduled function for this address
+    const scheduledFunction = await ctx.db
+      .query("scheduledFunctions")
+      .withIndex("by_address_and_function", (q) =>
+        q.eq("addressId", args.addressId).eq("functionName", "processTransactionFetch")
+      )
+      .filter((q) => q.eq(q.field("status"), "active"))
+      .first();
+
+    return scheduledFunction;
+  },
+});
+
 export const list = query({
   args: {
     cryptoType: v.optional(
@@ -188,20 +223,175 @@ export const toggleListening = mutation({
       updatedAt: Date.now(),
     });
 
-    // If enabling listening, schedule the transaction fetcher
+    // If enabling listening, schedule the transaction fetcher only if not already running
     if (args.isListening) {
-      // Schedule the transaction fetcher to run immediately
-      await ctx.scheduler.runAfter(
-        0,
-        internal.transactions.processTransactionFetch,
-        {
+      // Check if there's already an active scheduled function for this address
+      const existingSchedule = await ctx.db
+        .query("scheduledFunctions")
+        .withIndex("by_address_and_function", (q) =>
+          q.eq("addressId", args.id).eq("functionName", "processTransactionFetch")
+        )
+        .filter((q) => q.eq(q.field("status"), "active"))
+        .first();
+
+      if (!existingSchedule) {
+        // Create a tracking record for the scheduled function
+        const now = Date.now();
+        await ctx.db.insert("scheduledFunctions", {
           addressId: args.id,
-        },
-      );
+          userId: userId,
+          functionName: "processTransactionFetch",
+          status: "active",
+          startedAt: now,
+          lastRunAt: now,
+          runCount: 0,
+        });
+        
+        // Schedule the transaction fetcher to run immediately
+        await ctx.scheduler.runAfter(
+          0,
+          internal.transactions.processTransactionFetch,
+          {
+            addressId: args.id,
+          },
+        );
+        
+        console.log(`Started scheduled function for address ${args.id}`);
+      } else {
+        console.log(`Scheduled function already active for address ${args.id} (started ${new Date(existingSchedule.startedAt).toISOString()})`);
+      }
+    } else {
+      // If disabling, mark any active scheduled functions as stopping
+      const activeSchedules = await ctx.db
+        .query("scheduledFunctions")
+        .withIndex("by_address_and_function", (q) =>
+          q.eq("addressId", args.id).eq("functionName", "processTransactionFetch")
+        )
+        .filter((q) => q.eq(q.field("status"), "active"))
+        .collect();
+      
+      for (const schedule of activeSchedules) {
+        await ctx.db.patch(schedule._id, {
+          status: "stopping",
+        });
+      }
     }
-    // If disabling, the scheduled function will check isListening and stop itself
+    // The scheduled function will check isListening and update its status accordingly
 
     return { success: true };
+  },
+});
+
+// Restart scheduled functions for addresses that should be listening
+// This is useful after system restarts or crashes
+export const restartListeningAddresses = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError({
+        code: "UNAUTHORIZED",
+        message: "You must be authenticated to restart listening addresses",
+      });
+    }
+
+    // Find all addresses that should be listening
+    const listeningAddresses = await ctx.db
+      .query("addresses")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("isListening"), true))
+      .collect();
+
+    let restartedCount = 0;
+    const now = Date.now();
+
+    for (const address of listeningAddresses) {
+      // Check if there's already an active scheduled function
+      const existingSchedule = await ctx.db
+        .query("scheduledFunctions")
+        .withIndex("by_address_and_function", (q) =>
+          q.eq("addressId", address._id).eq("functionName", "processTransactionFetch")
+        )
+        .filter((q) => q.eq(q.field("status"), "active"))
+        .first();
+
+      if (!existingSchedule) {
+        // No active scheduled function, but user wants listening enabled
+        // Create a new scheduled function
+        await ctx.db.insert("scheduledFunctions", {
+          addressId: address._id,
+          userId: userId,
+          functionName: "processTransactionFetch",
+          status: "active",
+          startedAt: now,
+          lastRunAt: now,
+          runCount: 0,
+        });
+
+        // Schedule the transaction fetcher
+        await ctx.scheduler.runAfter(
+          0,
+          internal.transactions.processTransactionFetch,
+          {
+            addressId: address._id,
+          },
+        );
+
+        restartedCount++;
+        console.log(`Restarted scheduled function for address ${address._id}`);
+      }
+    }
+
+    return { 
+      restartedCount, 
+      totalListening: listeningAddresses.length,
+      message: `Restarted ${restartedCount} scheduled functions out of ${listeningAddresses.length} listening addresses`
+    };
+  },
+});
+
+export const cleanupStaleScheduledFunctions = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError({
+        code: "UNAUTHORIZED",
+        message: "You must be authenticated to cleanup scheduled functions",
+      });
+    }
+
+    // Find all scheduled functions for this user that are stale
+    // Consider a function stale if it's been more than 1 minute since lastRunAt
+    // and it's still marked as active (likely means it crashed)
+    const staleThreshold = Date.now() - 60000; // 1 minute ago
+    
+    const staleFunctions = await ctx.db
+      .query("scheduledFunctions")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("status"), "active"),
+          q.lt(q.field("lastRunAt"), staleThreshold)
+        )
+      )
+      .collect();
+
+    let cleanedCount = 0;
+    for (const sf of staleFunctions) {
+      // Check if the address still exists and is listening
+      const address = await ctx.db.get(sf.addressId);
+      if (!address || !address.isListening) {
+        // Mark as stopped if address is gone or not listening
+        await ctx.db.patch(sf._id, {
+          status: "stopped",
+          lastRunAt: Date.now(),
+        });
+        cleanedCount++;
+      }
+    }
+
+    return { cleanedCount, staleFunctions: staleFunctions.length };
   },
 });
 
@@ -240,6 +430,16 @@ export const remove = mutation({
 
     for (const transaction of transactions) {
       await ctx.db.delete(transaction._id);
+    }
+
+    // Delete all scheduled function records for this address
+    const scheduledFunctions = await ctx.db
+      .query("scheduledFunctions")
+      .withIndex("by_address", (q) => q.eq("addressId", args.id))
+      .collect();
+
+    for (const sf of scheduledFunctions) {
+      await ctx.db.delete(sf._id);
     }
 
     // Delete the address itself

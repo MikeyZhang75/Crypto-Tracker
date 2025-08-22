@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuthActions } from "@convex-dev/auth/react";
 import {
   BadgeCheck,
   Bell,
@@ -8,6 +9,7 @@ import {
   LogOut,
   Sparkles,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -35,6 +37,8 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const { signOut } = useAuthActions();
+  const router = useRouter();
 
   // Generate initials from name for avatar fallback
   const getInitials = (name: string) => {
@@ -44,6 +48,15 @@ export function NavUser({
       .join("")
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      router.push("/sign-in");
+    } catch (error) {
+      console.error("Failed to sign out:", error);
+    }
   };
 
   return (
@@ -109,7 +122,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>

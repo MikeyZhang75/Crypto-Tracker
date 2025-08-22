@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "convex/react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   AudioWaveform,
   ChartBar,
@@ -72,17 +73,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <ThemeToggle />
         <SidebarSeparator />
-        {currentUser === undefined ? (
-          <NavUserSkeleton />
-        ) : (
-          <NavUser
-            user={{
-              name: currentUser?.name || "Unknown User",
-              email: currentUser?.email || "Unknown Email",
-              avatar: currentUser?.image || "/avatars/default.jpg",
-            }}
-          />
-        )}
+        <AnimatePresence mode="wait">
+          {currentUser === undefined ? (
+            <NavUserSkeleton key="skeleton" />
+          ) : (
+            <motion.div
+              key="user"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              <NavUser
+                user={{
+                  name: currentUser?.name || "Unknown User",
+                  email: currentUser?.email || "Unknown Email",
+                  avatar: currentUser?.image || "/avatars/default.jpg",
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

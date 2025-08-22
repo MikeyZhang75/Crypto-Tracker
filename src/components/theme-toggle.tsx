@@ -31,13 +31,6 @@ export function ThemeToggle() {
     return <Sun className="h-4 w-4" />;
   };
 
-  const getLabel = () => {
-    if (!mounted) return "System";
-    if (theme === "dark") return "Dark";
-    if (theme === "system") return "System";
-    return "Light";
-  };
-
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -45,7 +38,7 @@ export function ThemeToggle() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton className="cursor-pointer">
               {getIcon()}
-              <span>{getLabel()}</span>
+              <span>Theme</span>
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-[150px]">

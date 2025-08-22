@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { IconRefresh, IconRotateClockwise } from "@tabler/icons-react";
 import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -30,6 +30,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
+import { DIALOG_ANIMATION_DURATION } from "@/lib/constants";
 import { generateVerificationCode } from "@/lib/generator";
 
 // Form schema for editing address
@@ -75,6 +76,7 @@ export function EditAddressDialog({
   onOpenChange,
 }: EditAddressDialogProps) {
   const updateAddress = useMutation(api.addresses.update);
+  const resetTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -146,12 +148,25 @@ export function EditAddressDialog({
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);
     if (!newOpen) {
+      // Clear any existing timeout
+      if (resetTimeoutRef.current) {
+        clearTimeout(resetTimeoutRef.current);
+      }
       // Delay form reset to prevent visual flicker during close animation
-      setTimeout(() => {
+      resetTimeoutRef.current = setTimeout(() => {
         form.reset();
-      }, 300); // Match dialog animation duration
+      }, DIALOG_ANIMATION_DURATION);
     }
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (resetTimeoutRef.current) {
+        clearTimeout(resetTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Handle regenerate code button click
   const handleRegenerateCode = () => {

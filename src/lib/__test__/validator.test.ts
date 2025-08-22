@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import type { NetworkType, TokenType } from "./constants";
-import { formatAddress, validateTokenNetworkAddress } from "./validator";
+import type { NetworkType, TokenType } from "../constants";
+import { formatAddress, validateTokenNetworkAddress } from "../validator";
 
 describe("validateTokenNetworkAddress", () => {
   describe("Token/Network Combination Validation", () => {

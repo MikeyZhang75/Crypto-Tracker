@@ -76,3 +76,5 @@ export const TOKEN_NETWORK_OPTIONS = TOKEN_NETWORK_INFO.map((info) => ({
   network: info.network,
   name: info.displayName,
 }));
+
+export const DIALOG_ANIMATION_DURATION = 300; // ms - Duration of dialog close animation

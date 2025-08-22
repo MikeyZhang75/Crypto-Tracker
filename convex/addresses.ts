@@ -1,6 +1,10 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
-import { SUPPORTED_TOKENS, SUPPORTED_NETWORKS } from "@/lib/constants";
+import {
+  isValidTokenNetworkCombination,
+  SUPPORTED_NETWORKS,
+  SUPPORTED_TOKENS,
+} from "@/lib/constants";
 import { validateTokenNetworkAddress } from "@/lib/validator";
 import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
@@ -104,7 +108,15 @@ export const add = mutation({
       });
     }
 
-    // Validate address format based on token and network
+    // First validate that the token/network combination is allowed
+    if (!isValidTokenNetworkCombination(args.token, args.network)) {
+      throw new ConvexError({
+        code: "INVALID_COMBINATION",
+        message: `${args.token} is not supported on ${args.network} network`,
+      });
+    }
+
+    // Then validate address format based on token and network
     if (!validateTokenNetworkAddress(args.token, args.network, args.address)) {
       throw new ConvexError({
         code: "INVALID_ADDRESS",

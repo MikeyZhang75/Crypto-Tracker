@@ -8,7 +8,7 @@ import {
 } from "@tabler/icons-react";
 import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -38,8 +38,12 @@ import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
 import {
   getTokenNetworkInfo,
+  getValidNetworksForToken,
+  isValidTokenNetworkCombination,
+  type NetworkType,
   SUPPORTED_NETWORKS,
   SUPPORTED_TOKENS,
+  type TokenType,
 } from "@/lib/constants";
 import { generateVerificationCode } from "@/lib/generator";
 import { validateTokenNetworkAddress } from "@/lib/validator";
@@ -47,8 +51,12 @@ import { validateTokenNetworkAddress } from "@/lib/validator";
 // Form schema with dynamic validation based on selected token and network
 const formSchema = z
   .object({
-    token: z.enum(SUPPORTED_TOKENS),
-    network: z.enum(SUPPORTED_NETWORKS),
+    token: z.enum(SUPPORTED_TOKENS, {
+      message: "Invalid token",
+    }),
+    network: z.enum(SUPPORTED_NETWORKS, {
+      message: "Invalid network",
+    }),
     address: z.string().min(1, "Address is required"),
     label: z.string().optional(),
     webhookEnabled: z.boolean().optional(),
@@ -59,6 +67,15 @@ const formSchema = z
   .superRefine((data, ctx) => {
     // Validate address based on selected token and network
     const { token, network, address, webhookEnabled, webhookUrl } = data;
+
+    // First check if the combination is valid
+    if (token && network && !isValidTokenNetworkCombination(token, network)) {
+      ctx.addIssue({
+        code: "custom",
+        message: `${token} is not supported on ${network} network`,
+        path: ["network"],
+      });
+    }
 
     if (address && token && network) {
       const isValid = validateTokenNetworkAddress(token, network, address);
@@ -101,7 +118,7 @@ export function CreateAddressDialog() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       token: "USDT",
-      network: "TRON",
+      network: "TRON", // This will be automatically updated if token changes
       address: "",
       label: "",
       webhookEnabled: false,
@@ -116,19 +133,53 @@ export function CreateAddressDialog() {
   const watchedNetwork = form.watch("network");
   const watchWebhookEnabled = form.watch("webhookEnabled");
 
-  // Handle token/network changes
+  // Memoize placeholder text to avoid repeated function calls
+  const addressPlaceholder = useMemo(
+    () =>
+      getTokenNetworkInfo(watchedToken, watchedNetwork)?.placeholder ||
+      "Enter address",
+    [watchedToken, watchedNetwork],
+  );
+
+  // Handle token/network changes with batch updates to prevent race conditions
   const handleTokenChange = (value: string) => {
-    form.setValue("token", value as typeof SUPPORTED_TOKENS[number]);
-    // Clear address field when selection changes
-    form.setValue("address", "");
-    form.clearErrors("address");
+    const newToken = value as TokenType;
+    const validNetworks = getValidNetworksForToken(newToken);
+
+    // Defensive check: ensure we have valid networks
+    if (validNetworks.length === 0) {
+      console.error(`No valid networks found for token ${newToken}`);
+      toast.error(`Configuration error: No networks available for ${newToken}`);
+      return;
+    }
+
+    // Check if current network is still valid for new token
+    const currentNetwork = form.getValues("network");
+    const newNetwork = validNetworks.includes(currentNetwork)
+      ? currentNetwork
+      : validNetworks[0];
+
+    // Batch update all fields to prevent intermediate invalid states
+    form.setValue("token", newToken, { shouldValidate: false });
+    form.setValue("network", newNetwork, { shouldValidate: false });
+    form.setValue("address", "", { shouldValidate: false });
+
+    // Clear errors and trigger validation after all updates
+    form.clearErrors(["token", "network", "address"]);
+    // Trigger validation only after all values are set
+    form.trigger(["token", "network"]);
   };
 
   const handleNetworkChange = (value: string) => {
-    form.setValue("network", value as typeof SUPPORTED_NETWORKS[number]);
-    // Clear address field when selection changes
-    form.setValue("address", "");
-    form.clearErrors("address");
+    const newNetwork = value as NetworkType;
+
+    // Batch update to prevent race conditions
+    form.setValue("network", newNetwork, { shouldValidate: false });
+    form.setValue("address", "", { shouldValidate: false });
+
+    // Clear errors and trigger validation
+    form.clearErrors(["network", "address"]);
+    form.trigger("network");
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -235,6 +286,7 @@ export function CreateAddressDialog() {
                         <NetworkSelector
                           value={field.value}
                           onValueChange={handleNetworkChange}
+                          selectedToken={watchedToken}
                         />
                       </FormControl>
                       <FormMessage />
@@ -252,10 +304,7 @@ export function CreateAddressDialog() {
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder={
-                          getTokenNetworkInfo(watchedToken, watchedNetwork)
-                            ?.placeholder
-                        }
+                        placeholder={addressPlaceholder}
                         className="font-mono text-sm"
                         autoComplete="off"
                       />
@@ -394,7 +443,6 @@ export function CreateAddressDialog() {
                         {!fieldState.error && (
                           <FormDescription>
                             Custom HTTP header name for the verification code
-                            (default: X-Webhook-Verification)
                           </FormDescription>
                         )}
                         <FormMessage />

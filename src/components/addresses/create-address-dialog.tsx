@@ -1,7 +1,11 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { IconPlus } from "@tabler/icons-react";
+import {
+  IconPlus,
+  IconRefresh,
+  IconRotateClockwise,
+} from "@tabler/icons-react";
 import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
 import { useState } from "react";
@@ -36,6 +40,7 @@ import {
   type CryptoType,
   getCryptoInfo,
 } from "@/lib/constants";
+import { generateVerificationCode } from "@/lib/generator";
 import { validateCryptoAddress } from "@/lib/validator";
 
 // Form schema with dynamic validation based on selected crypto type
@@ -44,16 +49,14 @@ const formSchema = z
     cryptoType: z.enum(CRYPTO_SYMBOLS),
     address: z.string().min(1, "Address is required"),
     label: z.string().optional(),
-    webhookUrl: z
-      .string()
-      .url("Invalid URL format")
-      .min(1, "Webhook URL is required"),
+    webhookEnabled: z.boolean().optional(),
+    webhookUrl: z.string().optional(),
     webhookVerificationCode: z.string().optional(),
-    generateCode: z.boolean().optional(),
+    webhookHeaderName: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     // Validate address based on selected crypto type
-    const { cryptoType, address } = data;
+    const { cryptoType, address, webhookEnabled, webhookUrl } = data;
 
     if (address) {
       const isValid = validateCryptoAddress(cryptoType, address);
@@ -63,6 +66,26 @@ const formSchema = z
           code: "custom",
           message: `Invalid ${cryptoType} address format`,
           path: ["address"],
+        });
+      }
+    }
+
+    // Validate webhook fields when enabled
+    if (webhookEnabled) {
+      if (!webhookUrl) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Webhook URL is required when webhook is enabled",
+          path: ["webhookUrl"],
+        });
+      } else if (
+        !webhookUrl.startsWith("http://") &&
+        !webhookUrl.startsWith("https://")
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Webhook URL must be a valid URL",
+          path: ["webhookUrl"],
         });
       }
     }
@@ -78,15 +101,16 @@ export function CreateAddressDialog() {
       cryptoType: "BTC",
       address: "",
       label: "",
+      webhookEnabled: false,
       webhookUrl: "",
       webhookVerificationCode: "",
-      generateCode: true,
+      webhookHeaderName: "X-Webhook-Verification",
     },
   });
 
   // Watch the cryptoType field to update validation schema
   const watchedCryptoType = form.watch("cryptoType");
-  const watchGenerateCode = form.watch("generateCode");
+  const watchWebhookEnabled = form.watch("webhookEnabled");
 
   // Handle crypto type changes
   const handleCryptoTypeChange = (value: CryptoType) => {
@@ -103,14 +127,21 @@ export function CreateAddressDialog() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      const webhook =
+        values.webhookEnabled && values.webhookUrl
+          ? {
+              url: values.webhookUrl,
+              verificationCode:
+                values.webhookVerificationCode || generateVerificationCode(),
+              headerName: values.webhookHeaderName || "X-Webhook-Verification",
+            }
+          : undefined;
+
       await addAddress({
         cryptoType: values.cryptoType,
         address: values.address,
         label: values.label || undefined,
-        webhookUrl: values.webhookUrl,
-        webhookVerificationCode: values.generateCode
-          ? undefined
-          : values.webhookVerificationCode || undefined,
+        webhook,
       });
       toast.success("Address added successfully");
       form.reset();
@@ -136,6 +167,19 @@ export function CreateAddressDialog() {
     if (!newOpen) {
       form.reset();
     }
+  };
+
+  // Handle regenerate code button click
+  const handleRegenerateCode = () => {
+    const newCode = generateVerificationCode();
+    form.setValue("webhookVerificationCode", newCode);
+    toast.success("New verification code generated");
+  };
+
+  // Handle reset header name to default
+  const handleResetHeaderName = () => {
+    form.setValue("webhookHeaderName", "X-Webhook-Verification");
+    toast.success("Header name reset to default");
   };
 
   return (
@@ -221,30 +265,7 @@ export function CreateAddressDialog() {
 
               <FormField
                 control={form.control}
-                name="webhookUrl"
-                render={({ field, fieldState }) => (
-                  <FormItem>
-                    <FormLabel>Webhook URL</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="https://example.com/webhook"
-                        type="url"
-                      />
-                    </FormControl>
-                    {!fieldState.error && (
-                      <FormDescription>
-                        Webhook URL to receive transaction notifications
-                      </FormDescription>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="generateCode"
+                name="webhookEnabled"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-x-1">
                     <FormControl>
@@ -254,38 +275,109 @@ export function CreateAddressDialog() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>Auto-generate verification code</FormLabel>
+                      <FormLabel>Enable Webhook Notifications</FormLabel>
                       <FormDescription>
-                        Generate a secure random verification code automatically
+                        Receive transaction notifications via webhook
                       </FormDescription>
                     </div>
                   </FormItem>
                 )}
               />
 
-              {!watchGenerateCode && (
-                <FormField
-                  control={form.control}
-                  name="webhookVerificationCode"
-                  render={({ field, fieldState }) => (
-                    <FormItem>
-                      <FormLabel>Verification Code</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="Enter custom verification code"
-                          className="font-mono"
-                        />
-                      </FormControl>
-                      {!fieldState.error && (
-                        <FormDescription>
-                          Custom verification code for webhook authentication
-                        </FormDescription>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {watchWebhookEnabled && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="webhookUrl"
+                    render={({ field, fieldState }) => (
+                      <FormItem>
+                        <FormLabel>Webhook URL</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="https://example.com/webhook"
+                            type="url"
+                          />
+                        </FormControl>
+                        {!fieldState.error && (
+                          <FormDescription>
+                            URL to receive transaction notifications
+                          </FormDescription>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="webhookVerificationCode"
+                    render={({ field, fieldState }) => (
+                      <FormItem>
+                        <FormLabel>Verification Code</FormLabel>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="Enter verification code"
+                              className="font-mono"
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={handleRegenerateCode}
+                            title="Generate new verification code"
+                          >
+                            <IconRefresh className="size-4" />
+                          </Button>
+                        </div>
+                        {!fieldState.error && (
+                          <FormDescription>
+                            Code used to authenticate webhook requests
+                          </FormDescription>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="webhookHeaderName"
+                    render={({ field, fieldState }) => (
+                      <FormItem>
+                        <FormLabel>Verification Header Name</FormLabel>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="X-Webhook-Verification"
+                              className="font-mono"
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={handleResetHeaderName}
+                            title="Reset to default header name"
+                          >
+                            <IconRotateClockwise className="size-4" />
+                          </Button>
+                        </div>
+                        {!fieldState.error && (
+                          <FormDescription>
+                            Custom HTTP header name for the verification code
+                            (default: X-Webhook-Verification)
+                          </FormDescription>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
               )}
             </div>
 

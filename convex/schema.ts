@@ -11,8 +11,16 @@ const schema = defineSchema({
     cryptoType: v.union(...CRYPTO_SYMBOLS.map((symbol) => v.literal(symbol))),
     address: v.string(),
     label: v.optional(v.string()),
-    webhookUrl: v.string(),
-    webhookVerificationCode: v.string(),
+    webhook: v.optional(
+      v.union(
+        v.object({
+          url: v.string(),
+          verificationCode: v.string(),
+          headerName: v.string(), // Custom header name for webhook verification
+        }),
+        v.null(),
+      ),
+    ),
     isListening: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),

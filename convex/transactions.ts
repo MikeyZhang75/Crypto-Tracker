@@ -142,8 +142,10 @@ export const fetchTransactionsAction = internalAction({
     }
 
     // Only support USDT on Tron for now
-    if (address.cryptoType !== "USDT") {
-      console.log(`Unsupported crypto type ${address.cryptoType}`);
+    if (address.token !== "USDT" || address.network !== "TRON") {
+      console.log(
+        `Unsupported token/network ${address.token}/${address.network}`,
+      );
       return { shouldContinue: false, transfers: [] };
     }
 
@@ -243,7 +245,8 @@ export const storeTransactionsAndReschedule = internalMutation({
           addressId: args.addressId,
           userId: address.userId,
           transactionId: transfer.transaction_id,
-          cryptoType: "USDT",
+          token: "USDT",
+          network: "TRON",
           from: transfer.from,
           to: transfer.to,
           amount: transfer.value,

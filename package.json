@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
-    "check:fix": "biome check --write"
+    "check:fix": "biome check --write",
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@auth/core": "0.37.0",

@@ -29,17 +29,19 @@ export const columns: ColumnDef<Doc<"addresses">>[] = [
     },
   },
   {
-    accessorKey: "cryptoType",
-    header: "Coin",
+    accessorKey: "token",
+    header: "Token/Network",
     cell: ({ row }) => {
       return (
         <div className="flex items-center gap-1">
           <TokenIcon
-            symbol={row.original.cryptoType}
+            symbol={row.original.token}
             variant="branded"
             size={16}
           />
-          <span>{row.original.cryptoType}</span>
+          <span>
+            {row.original.token} ({row.original.network})
+          </span>
         </div>
       );
     },

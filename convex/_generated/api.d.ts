@@ -15,6 +15,7 @@ import type {
 } from "convex/server";
 import type * as addresses from "../addresses.js";
 import type * as auth from "../auth.js";
+import type * as blockchains from "../blockchains.js";
 import type * as http from "../http.js";
 import type * as transactions from "../transactions.js";
 import type * as types from "../types.js";
@@ -32,6 +33,7 @@ import type * as webhooks from "../webhooks.js";
 declare const fullApi: ApiFromModules<{
   addresses: typeof addresses;
   auth: typeof auth;
+  blockchains: typeof blockchains;
   http: typeof http;
   transactions: typeof transactions;
   types: typeof types;

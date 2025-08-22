@@ -1,48 +1,49 @@
-// Define the array with const assertion for literal types
-export const CRYPTO_INFO = [
-  {
-    name: "Bitcoin",
-    symbol: "BTC",
-    placeholder: "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa or bc1...",
-    color: "bg-orange-500",
-  },
-  {
-    name: "Tether",
-    symbol: "USDT",
-    placeholder: "0x... (ERC-20) or T... (TRC-20)",
-    color: "bg-green-500",
-  },
-  {
-    name: "Litecoin",
-    symbol: "LTC",
-    placeholder: "L... or M... or ltc1...",
-    color: "bg-gray-500",
-  },
-] as const;
+// Define supported tokens and networks
+export const SUPPORTED_TOKENS = ["USDT"] as const;
+export const SUPPORTED_NETWORKS = ["TRON"] as const;
 
-// Derive CryptoType as a union of literal types: "BTC" | "USDT" | "LTC"
-export type CryptoType = (typeof CRYPTO_INFO)[number]["symbol"];
+// Type definitions
+export type TokenType = (typeof SUPPORTED_TOKENS)[number];
+export type NetworkType = (typeof SUPPORTED_NETWORKS)[number];
 
-// Define CryptoInfo interface based on the actual array structure
-export interface CryptoInfo {
+// Define TokenNetworkInfo interface
+export interface TokenNetworkInfo {
+  token: TokenType;
+  network: NetworkType;
   name: string;
-  symbol: CryptoType;
   placeholder: string;
   color: string;
+  displayName: string;
+  regex: RegExp;
 }
 
-// Helper function to get crypto info by symbol
-export function getCryptoInfo(symbol: CryptoType): CryptoInfo | undefined {
-  return CRYPTO_INFO.find((info) => info.symbol === symbol) as
-    | CryptoInfo
-    | undefined;
+// Token/Network combinations with metadata
+export const TOKEN_NETWORK_INFO = [
+  {
+    token: "USDT" as TokenType,
+    network: "TRON" as NetworkType,
+    name: "Tether (TRC-20)",
+    placeholder: "T... (TRC-20 address)",
+    color: "bg-green-500",
+    displayName: "USDT on TRON",
+    regex: /^T[a-zA-Z0-9]{33}$/,
+  },
+] as const satisfies TokenNetworkInfo[];
+
+// Helper function to get token/network info
+export function getTokenNetworkInfo(
+  token: TokenType,
+  network: NetworkType,
+): TokenNetworkInfo | undefined {
+  return TOKEN_NETWORK_INFO.find(
+    (info) => info.token === token && info.network === network,
+  );
 }
 
-export const CRYPTO_OPTIONS = CRYPTO_INFO.map((info) => ({
-  value: info.symbol,
-  symbol: info.symbol,
-  name: info.name,
+// Options for UI dropdowns
+export const TOKEN_NETWORK_OPTIONS = TOKEN_NETWORK_INFO.map((info) => ({
+  value: `${info.token}_${info.network}`,
+  token: info.token,
+  network: info.network,
+  name: info.displayName,
 }));
-
-// Create a properly typed array of symbols
-export const CRYPTO_SYMBOLS = CRYPTO_INFO.map((info) => info.symbol);

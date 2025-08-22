@@ -1,7 +1,7 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
-import { CRYPTO_SYMBOLS } from "@/lib/constants";
-import { validateCryptoAddress } from "@/lib/validator";
+import { SUPPORTED_TOKENS, SUPPORTED_NETWORKS } from "@/lib/constants";
+import { validateTokenNetworkAddress } from "@/lib/validator";
 import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 
@@ -44,8 +44,11 @@ export const getScheduledFunctionStatus = query({
 
 export const list = query({
   args: {
-    cryptoType: v.optional(
-      v.union(...CRYPTO_SYMBOLS.map((symbol) => v.literal(symbol))),
+    token: v.optional(
+      v.union(...SUPPORTED_TOKENS.map((token) => v.literal(token))),
+    ),
+    network: v.optional(
+      v.union(...SUPPORTED_NETWORKS.map((network) => v.literal(network))),
     ),
   },
   handler: async (ctx, args) => {
@@ -63,8 +66,10 @@ export const list = query({
 
     const addresses = await query.collect();
 
-    if (args.cryptoType) {
-      return addresses.filter((addr) => addr.cryptoType === args.cryptoType);
+    if (args.token && args.network) {
+      return addresses.filter(
+        (addr) => addr.token === args.token && addr.network === args.network,
+      );
     }
 
     return addresses;
@@ -73,7 +78,10 @@ export const list = query({
 
 export const add = mutation({
   args: {
-    cryptoType: v.union(...CRYPTO_SYMBOLS.map((symbol) => v.literal(symbol))),
+    token: v.union(...SUPPORTED_TOKENS.map((token) => v.literal(token))),
+    network: v.union(
+      ...SUPPORTED_NETWORKS.map((network) => v.literal(network)),
+    ),
     address: v.string(),
     label: v.optional(v.string()),
     webhook: v.optional(
@@ -96,24 +104,24 @@ export const add = mutation({
       });
     }
 
-    // Validate address format based on crypto type
-    if (!validateCryptoAddress(args.cryptoType, args.address)) {
+    // Validate address format based on token and network
+    if (!validateTokenNetworkAddress(args.token, args.network, args.address)) {
       throw new ConvexError({
         code: "INVALID_ADDRESS",
-        message: `Invalid ${args.cryptoType} address format`,
+        message: `Invalid ${args.token} address format for ${args.network} network`,
       });
     }
 
     // Check if address already exists for this user
     const existing = await ctx.db
       .query("addresses")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("cryptoType"), args.cryptoType),
-          q.eq(q.field("address"), args.address),
-        ),
+      .withIndex("by_user_and_token_network", (q) =>
+        q
+          .eq("userId", userId)
+          .eq("token", args.token)
+          .eq("network", args.network),
       )
+      .filter((q) => q.eq(q.field("address"), args.address))
       .first();
 
     if (existing) {
@@ -139,7 +147,8 @@ export const add = mutation({
 
     return await ctx.db.insert("addresses", {
       userId: userId,
-      cryptoType: args.cryptoType,
+      token: args.token,
+      network: args.network,
       address: args.address,
       label: args.label,
       webhook: webhookConfig,

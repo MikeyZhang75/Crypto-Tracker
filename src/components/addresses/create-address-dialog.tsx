@@ -41,10 +41,8 @@ import {
   getTokenNetworkInfo,
   getValidNetworksForToken,
   isValidTokenNetworkCombination,
-  type NetworkType,
   SUPPORTED_NETWORKS,
   SUPPORTED_TOKENS,
-  type TokenType,
 } from "@/lib/constants";
 import { generateVerificationCode } from "@/lib/generator";
 import { validateTokenNetworkAddress } from "@/lib/validator";
@@ -135,6 +133,23 @@ export function CreateAddressDialog() {
   const watchedNetwork = form.watch("network");
   const watchWebhookEnabled = form.watch("webhookEnabled");
 
+  // Effect to handle token/network dependency
+  useEffect(() => {
+    if (watchedToken) {
+      const validNetworks = getValidNetworksForToken(watchedToken);
+      const currentNetwork = form.getValues("network");
+
+      // If current network is not valid for the selected token, update it
+      if (!validNetworks.includes(currentNetwork)) {
+        form.setValue("network", validNetworks[0], {
+          shouldValidate: true,
+        });
+        // Clear address when network changes
+        form.setValue("address", "");
+      }
+    }
+  }, [watchedToken, form]);
+
   // Memoize placeholder text to avoid repeated function calls
   const addressPlaceholder = useMemo(
     () =>
@@ -143,45 +158,10 @@ export function CreateAddressDialog() {
     [watchedToken, watchedNetwork],
   );
 
-  // Handle token/network changes with batch updates to prevent race conditions
-  const handleTokenChange = (value: string) => {
-    const newToken = value as TokenType;
-    const validNetworks = getValidNetworksForToken(newToken);
-
-    // Defensive check: ensure we have valid networks
-    if (validNetworks.length === 0) {
-      console.error(`No valid networks found for token ${newToken}`);
-      toast.error(`Configuration error: No networks available for ${newToken}`);
-      return;
-    }
-
-    // Check if current network is still valid for new token
-    const currentNetwork = form.getValues("network");
-    const newNetwork = validNetworks.includes(currentNetwork)
-      ? currentNetwork
-      : validNetworks[0];
-
-    // Batch update all fields to prevent intermediate invalid states
-    form.setValue("token", newToken, { shouldValidate: false });
-    form.setValue("network", newNetwork, { shouldValidate: false });
-    form.setValue("address", "", { shouldValidate: false });
-
-    // Clear errors and trigger validation after all updates
-    form.clearErrors(["token", "network", "address"]);
-    // Trigger validation only after all values are set
-    form.trigger(["token", "network"]);
-  };
-
-  const handleNetworkChange = (value: string) => {
-    const newNetwork = value as NetworkType;
-
-    // Batch update to prevent race conditions
-    form.setValue("network", newNetwork, { shouldValidate: false });
-    form.setValue("address", "", { shouldValidate: false });
-
-    // Clear errors and trigger validation
-    form.clearErrors(["network", "address"]);
-    form.trigger("network");
+  // Handle network change to clear address
+  const handleNetworkChange = () => {
+    // Clear address when network changes
+    form.setValue("address", "");
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -287,7 +267,7 @@ export function CreateAddressDialog() {
                       <FormControl>
                         <TokenSelector
                           value={field.value}
-                          onValueChange={handleTokenChange}
+                          onValueChange={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />
@@ -303,7 +283,10 @@ export function CreateAddressDialog() {
                       <FormControl>
                         <NetworkSelector
                           value={field.value}
-                          onValueChange={handleNetworkChange}
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            handleNetworkChange();
+                          }}
                           selectedToken={watchedToken}
                         />
                       </FormControl>

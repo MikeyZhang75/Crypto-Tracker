@@ -24,3 +24,25 @@ export interface TronGridTRC20Response {
     };
   };
 }
+
+// Type definition for Etherscan API response
+export interface EtherscanApiResponse {
+  status: string;
+  message: string;
+  result: Array<{
+    blockNumber: string;
+    timeStamp: string;
+    hash: string;
+    nonce: string;
+    blockHash: string;
+    from: string;
+    to: string;
+    value: string;
+    gas: string;
+    gasPrice: string;
+    isError: string;
+    txreceipt_status: string;
+    gasUsed: string;
+    confirmations: string;
+  }>;
+}

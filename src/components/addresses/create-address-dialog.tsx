@@ -8,7 +8,7 @@ import {
 } from "@tabler/icons-react";
 import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -37,6 +37,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
 import {
+  DIALOG_ANIMATION_DURATION,
   getTokenNetworkInfo,
   getValidNetworksForToken,
   isValidTokenNetworkCombination,
@@ -113,6 +114,7 @@ const formSchema = z
 export function CreateAddressDialog() {
   const [open, setOpen] = useState(false);
   const addAddress = useMutation(api.addresses.add);
+  const resetTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -202,8 +204,8 @@ export function CreateAddressDialog() {
         webhook,
       });
       toast.success("Address added successfully");
-      form.reset();
       setOpen(false);
+      // Form will be reset after dialog close animation via handleOpenChange
     } catch (error) {
       if (error instanceof ConvexError) {
         const errorMessage = error.data.message || "Failed to add address";
@@ -223,9 +225,25 @@ export function CreateAddressDialog() {
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (!newOpen) {
-      form.reset();
+      // Clear any existing timeout
+      if (resetTimeoutRef.current) {
+        clearTimeout(resetTimeoutRef.current);
+      }
+      // Delay form reset to prevent visual flicker during close animation
+      resetTimeoutRef.current = setTimeout(() => {
+        form.reset();
+      }, DIALOG_ANIMATION_DURATION);
     }
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (resetTimeoutRef.current) {
+        clearTimeout(resetTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Handle regenerate code button click
   const handleRegenerateCode = () => {

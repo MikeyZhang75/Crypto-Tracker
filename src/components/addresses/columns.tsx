@@ -12,11 +12,6 @@ import { AddressActions } from "./address-actions";
 
 export const columns: ColumnDef<Doc<"addresses">>[] = [
   {
-    accessorKey: "label",
-    header: "Label",
-    cell: ({ row }) => <span>{row.original.label}</span>,
-  },
-  {
     accessorKey: "address",
     header: "Address",
     cell: ({ row }) => {
@@ -50,6 +45,11 @@ export const columns: ColumnDef<Doc<"addresses">>[] = [
     },
   },
   {
+    accessorKey: "label",
+    header: "Label",
+    cell: ({ row }) => <span>{row.original.label}</span>,
+  },
+  {
     accessorKey: "isListening",
     header: "Monitoring",
     cell: ({ row }) => {
@@ -61,7 +61,7 @@ export const columns: ColumnDef<Doc<"addresses">>[] = [
         >
           <span
             className={`size-1.5 rounded-full ${
-              isListening ? "bg-emerald-500" : "bg-gray-400"
+              isListening ? "bg-emerald-500 animate-pulse" : "bg-gray-400"
             }`}
             aria-hidden="true"
           />
@@ -71,19 +71,57 @@ export const columns: ColumnDef<Doc<"addresses">>[] = [
     },
   },
   {
-    accessorKey: "webhookUrl",
-    header: "Webhook URL",
+    accessorKey: "webhook",
+    header: "Webhook Configuration",
     cell: ({ row }) => {
-      const webhookUrl = row.original.webhookUrl;
+      const webhook = row.original.webhook;
+      if (!webhook) {
+        return (
+          <Badge variant="outline" className="gap-1.5 opacity-50">
+            <span
+              className="size-1.5 rounded-full bg-gray-400"
+              aria-hidden="true"
+            />
+            Not Configured
+          </Badge>
+        );
+      }
       return (
-        <CopyableText
-          text={webhookUrl}
-          label="Click to copy webhook URL"
-          toastMessages={{
-            success: "Webhook URL copied to clipboard",
-            error: "Failed to copy webhook URL",
-          }}
-        />
+        <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 items-center">
+          <span className="text-xs text-muted-foreground">URL:</span>
+          <div className="flex">
+            <CopyableText
+              text={webhook.url}
+              label="Click to copy webhook URL"
+              toastMessages={{
+                success: "Webhook URL copied to clipboard",
+                error: "Failed to copy webhook URL",
+              }}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground">Header:</span>
+          <div className="flex">
+            <CopyableText
+              text={webhook.headerName}
+              label="Click to copy header name"
+              toastMessages={{
+                success: "Header name copied to clipboard",
+                error: "Failed to copy header name",
+              }}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground">Code:</span>
+          <div className="flex">
+            <CopyableText
+              text={webhook.verificationCode}
+              label="Click to copy verification code"
+              toastMessages={{
+                success: "Verification code copied to clipboard",
+                error: "Failed to copy verification code",
+              }}
+            />
+          </div>
+        </div>
       );
     },
   },

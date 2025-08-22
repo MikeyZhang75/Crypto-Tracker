@@ -13,11 +13,11 @@ interface LogListProps {
   isMobile: boolean;
 }
 
-export function LogList({ 
-  webhookLogs, 
-  selectedLog, 
-  onSelectLog, 
-  isMobile 
+export function LogList({
+  webhookLogs,
+  selectedLog,
+  onSelectLog,
+  isMobile,
 }: LogListProps) {
   return (
     <div
@@ -58,9 +58,7 @@ function LoadingState() {
     <div className="flex h-40 items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">
-          Loading logs...
-        </span>
+        <span className="text-sm text-muted-foreground">Loading logs...</span>
       </div>
     </div>
   );
@@ -73,9 +71,7 @@ function EmptyState() {
         <IconWebhook className="h-10 w-10 text-muted-foreground/40" />
       </div>
       <div className="text-center space-y-1">
-        <p className="text-sm font-medium">
-          No webhook attempts
-        </p>
+        <p className="text-sm font-medium">No webhook attempts</p>
         <p className="text-xs text-muted-foreground">
           Webhook logs will appear here
         </p>

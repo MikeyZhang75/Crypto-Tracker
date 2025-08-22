@@ -82,10 +82,8 @@ export const send = internalAction({
       addressId: transaction.addressId,
     });
 
-    if (!address || !address.webhookUrl) {
-      console.log(
-        `No webhook URL configured for address ${transaction.addressId}`,
-      );
+    if (!address || !address.webhook) {
+      console.log(`No webhook configured for address ${transaction.addressId}`);
       return;
     }
 
@@ -122,7 +120,7 @@ export const send = internalAction({
         transactionId: args.transactionId,
         addressId: transaction.addressId,
         userId: transaction.userId,
-        webhookUrl: address.webhookUrl,
+        webhookUrl: address.webhook.url,
         status: "pending",
         requestPayload: JSON.stringify(webhookPayload),
         attemptNumber,
@@ -130,12 +128,13 @@ export const send = internalAction({
       });
 
       // Send the webhook with verification code in header
-      const response = await fetch(address.webhookUrl, {
+      const headerName = address.webhook.headerName;
+      const response = await fetch(address.webhook.url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "User-Agent": "CryptoTracker/1.0",
-          "X-Webhook-Verification": address.webhookVerificationCode,
+          [headerName]: address.webhook.verificationCode,
         },
         body: JSON.stringify(webhookPayload),
       });

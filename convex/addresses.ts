@@ -1,7 +1,6 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
 import { CRYPTO_SYMBOLS } from "@/lib/constants";
-import { generateVerificationCode } from "@/lib/generator";
 import { validateCryptoAddress } from "@/lib/validator";
 import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
@@ -32,7 +31,9 @@ export const getScheduledFunctionStatus = query({
     const scheduledFunction = await ctx.db
       .query("scheduledFunctions")
       .withIndex("by_address_and_function", (q) =>
-        q.eq("addressId", args.addressId).eq("functionName", "processTransactionFetch")
+        q
+          .eq("addressId", args.addressId)
+          .eq("functionName", "processTransactionFetch"),
       )
       .filter((q) => q.eq(q.field("status"), "active"))
       .first();
@@ -75,8 +76,16 @@ export const add = mutation({
     cryptoType: v.union(...CRYPTO_SYMBOLS.map((symbol) => v.literal(symbol))),
     address: v.string(),
     label: v.optional(v.string()),
-    webhookUrl: v.string(),
-    webhookVerificationCode: v.optional(v.string()),
+    webhook: v.optional(
+      v.union(
+        v.object({
+          url: v.string(),
+          verificationCode: v.string(),
+          headerName: v.string(),
+        }),
+        v.null(),
+      ),
+    ),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -115,17 +124,25 @@ export const add = mutation({
     }
 
     const now = Date.now();
-    // Use provided verification code or generate a new one
-    const verificationCode =
-      args.webhookVerificationCode || generateVerificationCode();
+
+    // Build webhook object if webhook config is provided
+    let webhookConfig:
+      | { url: string; verificationCode: string; headerName: string }
+      | undefined;
+    if (args.webhook && args.webhook !== null) {
+      webhookConfig = {
+        url: args.webhook.url,
+        verificationCode: args.webhook.verificationCode,
+        headerName: args.webhook.headerName,
+      };
+    }
 
     return await ctx.db.insert("addresses", {
       userId: userId,
       cryptoType: args.cryptoType,
       address: args.address,
       label: args.label,
-      webhookUrl: args.webhookUrl,
-      webhookVerificationCode: verificationCode,
+      webhook: webhookConfig,
       isListening: false, // Default to not listening
       createdAt: now,
       updatedAt: now,
@@ -137,8 +154,16 @@ export const update = mutation({
   args: {
     id: v.id("addresses"),
     label: v.optional(v.string()),
-    webhookUrl: v.string(),
-    webhookVerificationCode: v.optional(v.string()),
+    webhook: v.optional(
+      v.union(
+        v.object({
+          url: v.string(),
+          verificationCode: v.string(),
+          headerName: v.string(),
+        }),
+        v.null(),
+      ),
+    ),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -165,24 +190,33 @@ export const update = mutation({
       });
     }
 
-    // Always include the label and webhookUrl in updates, even if they're undefined
-    // This allows clearing them by setting to undefined
-    // For verification code, only update if provided, otherwise keep existing
+    // Build updates object
     const updates: {
       updatedAt: number;
       label?: string;
-      webhookUrl?: string;
-      webhookVerificationCode?: string;
+      webhook?: {
+        url: string;
+        verificationCode: string;
+        headerName: string;
+      };
     } = {
       updatedAt: Date.now(),
       label: args.label,
-      webhookUrl: args.webhookUrl,
     };
 
-    // Only update verification code if explicitly provided
-    if (args.webhookVerificationCode !== undefined) {
-      updates.webhookVerificationCode =
-        args.webhookVerificationCode || generateVerificationCode();
+    // Handle webhook updates
+    if (args.webhook !== undefined) {
+      if (args.webhook === null) {
+        // Clear webhook if explicitly set to null
+        updates.webhook = undefined;
+      } else {
+        // Update webhook config
+        updates.webhook = {
+          url: args.webhook.url,
+          verificationCode: args.webhook.verificationCode,
+          headerName: args.webhook.headerName,
+        };
+      }
     }
 
     return await ctx.db.patch(args.id, updates);
@@ -229,7 +263,9 @@ export const toggleListening = mutation({
       const existingSchedule = await ctx.db
         .query("scheduledFunctions")
         .withIndex("by_address_and_function", (q) =>
-          q.eq("addressId", args.id).eq("functionName", "processTransactionFetch")
+          q
+            .eq("addressId", args.id)
+            .eq("functionName", "processTransactionFetch"),
         )
         .filter((q) => q.eq(q.field("status"), "active"))
         .first();
@@ -246,7 +282,7 @@ export const toggleListening = mutation({
           lastRunAt: now,
           runCount: 0,
         });
-        
+
         // Schedule the transaction fetcher to run immediately
         await ctx.scheduler.runAfter(
           0,
@@ -255,21 +291,25 @@ export const toggleListening = mutation({
             addressId: args.id,
           },
         );
-        
+
         console.log(`Started scheduled function for address ${args.id}`);
       } else {
-        console.log(`Scheduled function already active for address ${args.id} (started ${new Date(existingSchedule.startedAt).toISOString()})`);
+        console.log(
+          `Scheduled function already active for address ${args.id} (started ${new Date(existingSchedule.startedAt).toISOString()})`,
+        );
       }
     } else {
       // If disabling, mark any active scheduled functions as stopping
       const activeSchedules = await ctx.db
         .query("scheduledFunctions")
         .withIndex("by_address_and_function", (q) =>
-          q.eq("addressId", args.id).eq("functionName", "processTransactionFetch")
+          q
+            .eq("addressId", args.id)
+            .eq("functionName", "processTransactionFetch"),
         )
         .filter((q) => q.eq(q.field("status"), "active"))
         .collect();
-      
+
       for (const schedule of activeSchedules) {
         await ctx.db.patch(schedule._id, {
           status: "stopping",
@@ -310,7 +350,9 @@ export const restartListeningAddresses = mutation({
       const existingSchedule = await ctx.db
         .query("scheduledFunctions")
         .withIndex("by_address_and_function", (q) =>
-          q.eq("addressId", address._id).eq("functionName", "processTransactionFetch")
+          q
+            .eq("addressId", address._id)
+            .eq("functionName", "processTransactionFetch"),
         )
         .filter((q) => q.eq(q.field("status"), "active"))
         .first();
@@ -342,10 +384,10 @@ export const restartListeningAddresses = mutation({
       }
     }
 
-    return { 
-      restartedCount, 
+    return {
+      restartedCount,
       totalListening: listeningAddresses.length,
-      message: `Restarted ${restartedCount} scheduled functions out of ${listeningAddresses.length} listening addresses`
+      message: `Restarted ${restartedCount} scheduled functions out of ${listeningAddresses.length} listening addresses`,
     };
   },
 });
@@ -365,15 +407,15 @@ export const cleanupStaleScheduledFunctions = mutation({
     // Consider a function stale if it's been more than 1 minute since lastRunAt
     // and it's still marked as active (likely means it crashed)
     const staleThreshold = Date.now() - 60000; // 1 minute ago
-    
+
     const staleFunctions = await ctx.db
       .query("scheduledFunctions")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .filter((q) =>
         q.and(
           q.eq(q.field("status"), "active"),
-          q.lt(q.field("lastRunAt"), staleThreshold)
-        )
+          q.lt(q.field("lastRunAt"), staleThreshold),
+        ),
       )
       .collect();
 

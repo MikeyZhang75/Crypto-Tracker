@@ -143,7 +143,6 @@ export function WebhookHistoryDrawer({
       open={open}
       onOpenChange={setOpen}
       direction={isMobile ? "bottom" : "right"}
-      shouldScaleBackground={false}
     >
       <DrawerPrimitive.Trigger asChild>
         <Button variant="outline" size="sm">
@@ -153,7 +152,7 @@ export function WebhookHistoryDrawer({
       </DrawerPrimitive.Trigger>
 
       <DrawerPrimitive.Portal>
-        <DrawerPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50" />
+        <DrawerPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
         <DrawerPrimitive.Content
           className={cn(
             "fixed z-50 flex flex-col bg-background shadow-2xl",
@@ -161,6 +160,7 @@ export function WebhookHistoryDrawer({
               ? "inset-x-0 bottom-0 max-h-[90vh] rounded-t-2xl"
               : "inset-y-0 right-0 h-full w-[900px]",
           )}
+          // data-vaul-no-drag
         >
           {/* Mobile Handle */}
           {isMobile && (
@@ -439,30 +439,24 @@ export function WebhookHistoryDrawer({
                                 <IconCode className="h-4 w-4 text-muted-foreground" />
                                 Request Payload
                               </h3>
-                              <Button
-                                variant={
-                                  copiedField === "request"
-                                    ? "default"
-                                    : "outline"
-                                }
-                                size="sm"
-                                onClick={() =>
-                                  handleCopy(log.requestPayload, "request")
-                                }
-                                className="h-8 px-3 text-xs gap-1.5 transition-all"
-                              >
-                                {copiedField === "request" ? (
-                                  <>
-                                    <IconCheck className="h-3.5 w-3.5" />
-                                    Copied!
-                                  </>
-                                ) : (
-                                  <>
-                                    <IconCopy className="h-3.5 w-3.5" />
-                                    Copy JSON
-                                  </>
-                                )}
-                              </Button>
+                              {copiedField === "request" ? (
+                                <span className="inline-flex items-center h-8 px-3 text-xs gap-1.5 font-medium text-emerald-600 dark:text-emerald-500 bg-emerald-500/10 rounded-md">
+                                  <IconCheck className="h-3.5 w-3.5" />
+                                  Copied!
+                                </span>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleCopy(log.requestPayload, "request")
+                                  }
+                                  className="h-8 px-3 text-xs gap-1.5 transition-all"
+                                >
+                                  <IconCopy className="h-3.5 w-3.5" />
+                                  Copy JSON
+                                </Button>
+                              )}
                             </div>
                             <div className="relative rounded-lg border bg-muted/10 overflow-hidden">
                               <ScrollArea className="max-h-80">
@@ -482,33 +476,27 @@ export function WebhookHistoryDrawer({
                                   <IconCode className="h-4 w-4 text-muted-foreground" />
                                   Response Body
                                 </h3>
-                                <Button
-                                  variant={
-                                    copiedField === "response"
-                                      ? "default"
-                                      : "outline"
-                                  }
-                                  size="sm"
-                                  onClick={() =>
-                                    handleCopy(
-                                      log.responseBody || "",
-                                      "response",
-                                    )
-                                  }
-                                  className="h-8 px-3 text-xs gap-1.5 transition-all"
-                                >
-                                  {copiedField === "response" ? (
-                                    <>
-                                      <IconCheck className="h-3.5 w-3.5" />
-                                      Copied!
-                                    </>
-                                  ) : (
-                                    <>
-                                      <IconCopy className="h-3.5 w-3.5" />
-                                      Copy JSON
-                                    </>
-                                  )}
-                                </Button>
+                                {copiedField === "response" ? (
+                                  <span className="inline-flex items-center h-8 px-3 text-xs gap-1.5 font-medium text-emerald-600 dark:text-emerald-500 bg-emerald-500/10 rounded-md">
+                                    <IconCheck className="h-3.5 w-3.5" />
+                                    Copied!
+                                  </span>
+                                ) : (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleCopy(
+                                        log.responseBody || "",
+                                        "response",
+                                      )
+                                    }
+                                    className="h-8 px-3 text-xs gap-1.5 transition-all"
+                                  >
+                                    <IconCopy className="h-3.5 w-3.5" />
+                                    Copy JSON
+                                  </Button>
+                                )}
                               </div>
                               <div className="relative rounded-lg border bg-muted/10 overflow-hidden">
                                 <ScrollArea className="max-h-80">

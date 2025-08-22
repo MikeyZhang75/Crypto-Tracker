@@ -38,8 +38,12 @@ import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
 import {
   getTokenNetworkInfo,
+  getValidNetworksForToken,
+  isValidTokenNetworkCombination,
+  type NetworkType,
   SUPPORTED_NETWORKS,
   SUPPORTED_TOKENS,
+  type TokenType,
 } from "@/lib/constants";
 import { generateVerificationCode } from "@/lib/generator";
 import { validateTokenNetworkAddress } from "@/lib/validator";
@@ -47,8 +51,12 @@ import { validateTokenNetworkAddress } from "@/lib/validator";
 // Form schema with dynamic validation based on selected token and network
 const formSchema = z
   .object({
-    token: z.enum(SUPPORTED_TOKENS),
-    network: z.enum(SUPPORTED_NETWORKS),
+    token: z.enum(SUPPORTED_TOKENS, {
+      message: "Invalid token",
+    }),
+    network: z.enum(SUPPORTED_NETWORKS, {
+      message: "Invalid network",
+    }),
     address: z.string().min(1, "Address is required"),
     label: z.string().optional(),
     webhookEnabled: z.boolean().optional(),
@@ -59,6 +67,15 @@ const formSchema = z
   .superRefine((data, ctx) => {
     // Validate address based on selected token and network
     const { token, network, address, webhookEnabled, webhookUrl } = data;
+
+    // First check if the combination is valid
+    if (token && network && !isValidTokenNetworkCombination(token, network)) {
+      ctx.addIssue({
+        code: "custom",
+        message: `${token} is not supported on ${network} network`,
+        path: ["network"],
+      });
+    }
 
     if (address && token && network) {
       const isValid = validateTokenNetworkAddress(token, network, address);
@@ -101,7 +118,7 @@ export function CreateAddressDialog() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       token: "USDT",
-      network: "TRON",
+      network: "TRON", // This will be automatically updated if token changes
       address: "",
       label: "",
       webhookEnabled: false,
@@ -118,17 +135,32 @@ export function CreateAddressDialog() {
 
   // Handle token/network changes
   const handleTokenChange = (value: string) => {
-    form.setValue("token", value as typeof SUPPORTED_TOKENS[number]);
+    const newToken = value as TokenType;
+    form.setValue("token", newToken);
+
+    // Check if current network is still valid for new token
+    const currentNetwork = form.getValues("network");
+    const validNetworks = getValidNetworksForToken(newToken);
+
+    // If current network is not valid for new token, select the first valid network
+    if (!validNetworks.includes(currentNetwork)) {
+      form.setValue("network", validNetworks[0]);
+    }
+
     // Clear address field when selection changes
     form.setValue("address", "");
     form.clearErrors("address");
+    form.clearErrors("network");
   };
 
   const handleNetworkChange = (value: string) => {
-    form.setValue("network", value as typeof SUPPORTED_NETWORKS[number]);
+    const newNetwork = value as NetworkType;
+    form.setValue("network", newNetwork);
+
     // Clear address field when selection changes
     form.setValue("address", "");
     form.clearErrors("address");
+    form.clearErrors("network");
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -235,6 +267,7 @@ export function CreateAddressDialog() {
                         <NetworkSelector
                           value={field.value}
                           onValueChange={handleNetworkChange}
+                          selectedToken={watchedToken}
                         />
                       </FormControl>
                       <FormMessage />

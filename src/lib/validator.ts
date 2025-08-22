@@ -1,6 +1,7 @@
 import {
+  getTokenNetworkInfo,
+  isValidTokenNetworkCombination,
   type NetworkType,
-  TOKEN_NETWORK_INFO,
   type TokenType,
 } from "./constants";
 
@@ -10,11 +11,17 @@ export function validateTokenNetworkAddress(
   network: NetworkType,
   address: string,
 ): boolean {
-  const info = TOKEN_NETWORK_INFO.find(
-    (info) => info.token === token && info.network === network,
-  );
+  // First check if the combination is valid
+  if (!isValidTokenNetworkCombination(token, network)) {
+    return false;
+  }
+
+  // Get the info for this combination
+  const info = getTokenNetworkInfo(token, network);
   if (!info) {
     return false;
   }
+
+  // Validate the address format
   return info.regex.test(address);
 }

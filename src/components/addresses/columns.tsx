@@ -34,11 +34,7 @@ export const columns: ColumnDef<Doc<"addresses">>[] = [
     cell: ({ row }) => {
       return (
         <div className="flex items-center gap-1">
-          <TokenIcon
-            symbol={row.original.token}
-            variant="branded"
-            size={16}
-          />
+          <TokenIcon symbol={row.original.token} variant="branded" size={16} />
           <span>
             {row.original.token} ({row.original.network})
           </span>

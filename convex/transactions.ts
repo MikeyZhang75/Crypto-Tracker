@@ -1,5 +1,6 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
+import type { NetworkType, TokenType } from "@/lib/constants";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import {
@@ -8,10 +9,11 @@ import {
   internalQuery,
   query,
 } from "./_generated/server";
-import type { TronGridTRC20Response } from "./types";
-
-// USDT contract address on Tron mainnet
-const USDT_CONTRACT_ADDRESS = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
+import {
+  fetchEthereumETHTransfers,
+  fetchTronUSDTTransfers,
+} from "./blockchains";
+import type { EtherscanApiResponse, TronGridTRC20Response } from "./types";
 
 // Public query to list transactions by address string
 export const listByAddressString = query({
@@ -53,45 +55,6 @@ export const listByAddressString = query({
     return transactions;
   },
 });
-
-// Helper function to fetch Tron USDT incoming transfers using TronGrid API
-async function fetchTronUSDTTransfers(address: string, lastTimestamp = 0) {
-  try {
-    // TronGrid API endpoint for TRC20 transactions
-    const apiUrl = `https://api.trongrid.io/v1/accounts/${address}/transactions/trc20`;
-
-    const params = new URLSearchParams({
-      limit: "10",
-      contract_address: USDT_CONTRACT_ADDRESS,
-      only_confirmed: "true", // Only get confirmed transactions
-      only_to: "true", // Only get transfers to the address
-      min_timestamp: lastTimestamp.toString(),
-    });
-
-    // Fetch TRC20 transactions for the address, filtered by USDT contract
-    const response = await fetch(`${apiUrl}?${params.toString()}`, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        // Add API key if available (optional for public endpoints)
-        ...(process.env.TRONGRID_API_KEY && {
-          "TRON-PRO-API-KEY": process.env.TRONGRID_API_KEY,
-        }),
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`TronGrid API error: ${response.statusText}`);
-    }
-
-    const data: TronGridTRC20Response = await response.json();
-
-    return data.data;
-  } catch (error) {
-    console.error("Error fetching Tron USDT transfers:", error);
-    throw error; // Re-throw the error instead of returning mock data
-  }
-}
 
 // Internal query to get address details
 export const getAddress = internalQuery({
@@ -141,14 +104,6 @@ export const fetchTransactionsAction = internalAction({
       return { shouldContinue: false, transfers: [] };
     }
 
-    // Only support USDT on Tron for now
-    if (address.token !== "USDT" || address.network !== "TRON") {
-      console.log(
-        `Unsupported token/network ${address.token}/${address.network}`,
-      );
-      return { shouldContinue: false, transfers: [] };
-    }
-
     try {
       // Get the latest transaction timestamp
       const latestTimestamp = await ctx.runQuery(
@@ -158,11 +113,26 @@ export const fetchTransactionsAction = internalAction({
 
       const minTimestamp = latestTimestamp || address.createdAt;
 
-      // Fetch new transfers from TronGrid
-      const transfers = await fetchTronUSDTTransfers(
-        address.address,
-        minTimestamp,
-      );
+      let transfers: Array<
+        TronGridTRC20Response["data"][0] | EtherscanApiResponse["result"][0]
+      > = [];
+
+      // Route to appropriate blockchain API based on token/network
+      if (address.token === "USDT" && address.network === "TRON") {
+        // Fetch new transfers from TronGrid
+        transfers = await fetchTronUSDTTransfers(address.address, minTimestamp);
+      } else if (address.token === "ETH" && address.network === "Ethereum") {
+        // Fetch new transfers from Etherscan
+        transfers = await fetchEthereumETHTransfers(
+          address.address,
+          minTimestamp,
+        );
+      } else {
+        console.log(
+          `Unsupported token/network ${address.token}/${address.network}`,
+        );
+        return { shouldContinue: false, transfers: [] };
+      }
 
       return { shouldContinue: true, transfers };
     } catch (error) {
@@ -233,33 +203,71 @@ export const storeTransactionsAndReschedule = internalMutation({
     }> = [];
 
     for (const transfer of args.transfers) {
+      // Determine transaction ID and format based on network
+      let txId: string;
+      let txData: {
+        transactionId: string;
+        from: string;
+        to: string;
+        amount: string;
+        timestamp: number;
+        token: TokenType;
+        network: NetworkType;
+        blockNumber?: string;
+        fee?: string;
+      };
+
+      if (address.network === "TRON" && "transaction_id" in transfer) {
+        txId = transfer.transaction_id;
+        txData = {
+          transactionId: transfer.transaction_id,
+          from: transfer.from,
+          to: transfer.to,
+          amount: transfer.value,
+          timestamp: transfer.block_timestamp,
+          token: "USDT" as TokenType,
+          network: "TRON" as NetworkType,
+        };
+      } else if (address.network === "Ethereum" && "hash" in transfer) {
+        txId = transfer.hash;
+        txData = {
+          transactionId: transfer.hash,
+          from: transfer.from,
+          to: transfer.to,
+          amount: transfer.value,
+          timestamp: Number.parseInt(transfer.timeStamp, 10) * 1000, // Convert to milliseconds
+          blockNumber: transfer.blockNumber,
+          fee: (
+            BigInt(transfer.gasUsed) * BigInt(transfer.gasPrice)
+          ).toString(),
+          token: "ETH" as TokenType,
+          network: "Ethereum" as NetworkType,
+        };
+      } else {
+        continue; // Skip unsupported networks
+      }
+
       // Check if transaction already exists (safety check)
       const existing = await ctx.db
         .query("transactions")
         .withIndex("by_address", (q) => q.eq("addressId", args.addressId))
-        .filter((q) => q.eq(q.field("transactionId"), transfer.transaction_id))
+        .filter((q) => q.eq(q.field("transactionId"), txId))
         .first();
 
       if (!existing) {
         const transactionId = await ctx.db.insert("transactions", {
           addressId: args.addressId,
           userId: address.userId,
-          transactionId: transfer.transaction_id,
-          token: "USDT",
-          network: "TRON",
-          from: transfer.from,
-          to: transfer.to,
-          amount: transfer.value,
-          timestamp: transfer.block_timestamp,
+          ...txData,
           type:
-            transfer.to.toLowerCase() === address.address.toLowerCase()
+            txData.to.toLowerCase() === address.address.toLowerCase()
               ? "received"
               : "sent",
           webhookSent: false,
           createdAt: now,
         });
 
-        console.log(`Stored new transaction ${transfer.transaction_id}`);
+        console.log(`Stored new transaction ${txId}`);
 
         // Track new transactions that need webhook calls
         if (address.webhook) {

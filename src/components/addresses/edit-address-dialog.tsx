@@ -102,8 +102,6 @@ export function EditAddressDialog({
 
   const watchWebhookEnabled = form.watch("webhookEnabled");
 
-  const watchWebhookEnabled = form.watch("webhookEnabled");
-
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       const webhook =

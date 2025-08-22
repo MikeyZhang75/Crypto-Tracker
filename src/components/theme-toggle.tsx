@@ -2,6 +2,7 @@
 
 import { Laptop, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 import {
   DropdownMenu,
@@ -16,15 +17,22 @@ import {
 } from "@/components/ui/sidebar";
 
 export function ThemeToggle() {
+  const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const getIcon = () => {
+    if (!mounted) return <Laptop className="h-4 w-4" />;
     if (theme === "dark") return <Moon className="h-4 w-4" />;
     if (theme === "system") return <Laptop className="h-4 w-4" />;
     return <Sun className="h-4 w-4" />;
   };
 
   const getLabel = () => {
+    if (!mounted) return "System";
     if (theme === "dark") return "Dark";
     if (theme === "system") return "System";
     return "Light";

@@ -116,7 +116,7 @@ export function WebhookHistoryDrawer({
         string: "text-green-700 dark:text-green-400",
         number: "text-blue-700 dark:text-blue-400",
         boolean: "text-amber-700 dark:text-amber-400",
-        null: "text-gray-600 dark:text-gray-400",
+        null: "text-gray-600 dark:text-gray-500",
         property: "text-purple-700 dark:text-purple-400",
         punctuation: "text-gray-600 dark:text-gray-500",
         operator: "text-gray-600 dark:text-gray-500",
@@ -220,7 +220,7 @@ export function WebhookHistoryDrawer({
             {/* Log List */}
             <div
               className={cn(
-                "bg-muted/5 backdrop-blur-sm",
+                "bg-muted/30 backdrop-blur-sm",
                 isMobile
                   ? selectedLog
                     ? "hidden"
@@ -311,8 +311,8 @@ export function WebhookHistoryDrawer({
                           </div>
 
                           {log.errorMessage && (
-                            <div className="mt-3 rounded-lg bg-red-500/10 px-3 py-2">
-                              <p className="text-xs text-red-600 dark:text-red-400 line-clamp-2">
+                            <div className="mt-3 rounded-lg bg-destructive/10 px-3 py-2">
+                              <p className="text-xs text-destructive line-clamp-2">
                                 {log.errorMessage}
                               </p>
                             </div>
@@ -364,7 +364,7 @@ export function WebhookHistoryDrawer({
                               >
                                 <span
                                   className={cn(
-                                    "size-2 rounded-full animate-pulse",
+                                    "size-2 rounded-full",
                                     getStatusStyle(log.status).status_color,
                                   )}
                                   aria-hidden="true"
@@ -419,13 +419,13 @@ export function WebhookHistoryDrawer({
                           {log.errorMessage && (
                             <div className="space-y-3">
                               <h3 className="text-sm font-semibold flex items-center gap-2">
-                                <IconX className="h-4 w-4 text-red-500" />
-                                <span className="text-red-500">
+                                <IconX className="h-4 w-4 text-destructive" />
+                                <span className="text-destructive">
                                   Error Details
                                 </span>
                               </h3>
-                              <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-4">
-                                <code className="text-xs text-red-600 dark:text-red-400 break-words block leading-relaxed">
+                              <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-4">
+                                <code className="text-xs text-destructive break-words block leading-relaxed">
                                   {log.errorMessage}
                                 </code>
                               </div>

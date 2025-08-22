@@ -98,7 +98,7 @@ export function EditAddressDialog({
       webhookHeaderName:
         address.webhook?.headerName || "X-Webhook-Verification",
     });
-  }, [address, form]);
+  }, [address, form.reset]);
 
   const watchWebhookEnabled = form.watch("webhookEnabled");
 

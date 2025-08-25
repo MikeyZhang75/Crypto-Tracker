@@ -2,9 +2,10 @@
 
 import { IconWebhook, IconX } from "@tabler/icons-react";
 import { Drawer as DrawerPrimitive } from "vaul";
+import { ResendWebhookButton } from "@/components/transactions/resend-webhook-button";
 import { Button } from "@/components/ui/button";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
-import { ResendWebhookButton } from "../resend-webhook-button";
+import { useTranslation } from "@/i18n/use-translation";
 
 interface DrawerHeaderProps {
   webhookLogs: Doc<"webhookLogs">[] | undefined;
@@ -15,6 +16,7 @@ export function DrawerHeader({
   webhookLogs,
   transactionId,
 }: DrawerHeaderProps) {
+  const t = useTranslation();
   return (
     <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center justify-between px-6 py-5">
@@ -24,7 +26,7 @@ export function DrawerHeader({
           </div>
           <div className="space-y-1">
             <DrawerPrimitive.Title className="text-xl font-semibold tracking-tight">
-              Webhook History
+              {t.transactions.webhookHistory}
             </DrawerPrimitive.Title>
             <DrawerPrimitive.Description className="text-sm text-muted-foreground">
               {webhookLogs && webhookLogs.length > 0 ? (
@@ -32,10 +34,10 @@ export function DrawerHeader({
                   <span className="font-medium">
                     {webhookLogs.filter((l) => l.status === "success").length}
                   </span>
-                  <span>successful</span>
+                  <span>{t.transactions.successful}</span>
                 </span>
               ) : (
-                "No webhook attempts"
+                t.transactions.noWebhookAttempts
               )}
             </DrawerPrimitive.Description>
           </div>

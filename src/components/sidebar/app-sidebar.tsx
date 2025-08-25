@@ -10,7 +10,6 @@ import {
   Wallet,
 } from "lucide-react";
 import type * as React from "react";
-
 import { NavMain } from "@/components/sidebar/nav-main";
 import { NavUser } from "@/components/sidebar/nav-user";
 import { NavUserSkeleton } from "@/components/sidebar/nav-user-skeleton";
@@ -19,10 +18,13 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarMenu,
   SidebarRail,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { api } from "@/convex/_generated/api";
+import { useTranslation } from "@/i18n/use-translation";
+import LanguageSelector from "./language-selector";
 
 // Animation configuration following Material Design guidelines
 export const ANIMATION_CONFIG = {
@@ -41,43 +43,44 @@ export const ANIMATION_CONFIG = {
   },
 } as const;
 
-// This is sample data.
-const data = {
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
-  navMain: [
-    {
-      title: "Dashboard",
-      url: "/",
-      icon: ChartBar,
-      isActive: true,
-    },
-    {
-      title: "Addresses",
-      url: "/addresses",
-      icon: Wallet,
-      isActive: true,
-    },
-  ],
-};
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const currentUser = useQuery(api.users.getCurrentUser);
+  const t = useTranslation();
+
+  // Navigation data with translations
+  const data = {
+    teams: [
+      {
+        name: "Acme Inc",
+        logo: GalleryVerticalEnd,
+        plan: "Enterprise",
+      },
+      {
+        name: "Acme Corp.",
+        logo: AudioWaveform,
+        plan: "Startup",
+      },
+      {
+        name: "Evil Corp.",
+        logo: Command,
+        plan: "Free",
+      },
+    ],
+    navMain: [
+      {
+        title: t.nav.dashboard,
+        url: "/",
+        icon: ChartBar,
+        isActive: true,
+      },
+      {
+        title: t.nav.addresses,
+        url: "/addresses",
+        icon: Wallet,
+        isActive: true,
+      },
+    ],
+  };
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -88,7 +91,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <ThemeToggle />
+        <SidebarMenu>
+          <ThemeToggle />
+          <LanguageSelector />
+        </SidebarMenu>
         <SidebarSeparator />
         <AnimatePresence mode="wait">
           {currentUser === undefined ? (

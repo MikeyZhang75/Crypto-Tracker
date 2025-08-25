@@ -5,7 +5,7 @@ import { useQuery } from "convex/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { DataTable } from "@/components/custom-ui/data-table";
-import { columns } from "@/components/transactions/columns";
+import { useTransactionColumns } from "@/components/transactions/columns-provider";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 
@@ -16,7 +16,7 @@ export default function AddressTransactionsPage() {
   const transactions = useQuery(api.transactions.listByAddressString, {
     address,
   });
-
+  const columns = useTransactionColumns();
   return (
     <>
       {/* Back button */}

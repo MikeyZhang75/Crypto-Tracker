@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTranslation } from "@/i18n/use-translation";
 import { cn } from "@/lib/utils";
 import { DrawerHeader } from "./webhook-drawer/drawer-header";
 import { LogDetails } from "./webhook-drawer/log-details";
@@ -20,6 +21,7 @@ interface WebhookHistoryDrawerProps {
 export function WebhookHistoryDrawer({
   transactionId,
 }: WebhookHistoryDrawerProps) {
+  const t = useTranslation();
   const [open, setOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<string | null>(null);
   const isMobile = useIsMobile();
@@ -47,7 +49,7 @@ export function WebhookHistoryDrawer({
       <DrawerPrimitive.Trigger asChild>
         <Button variant="outline" size="sm">
           <IconHistory className="size-4" />
-          View
+          {t.transactions.viewWebhookHistory}
         </Button>
       </DrawerPrimitive.Trigger>
 

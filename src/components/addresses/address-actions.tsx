@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
+import { useTranslation } from "@/i18n/use-translation";
 import { EditAddressDialog } from "./edit-address-dialog";
 
 interface AddressActionsProps {
@@ -30,20 +31,21 @@ interface AddressActionsProps {
 }
 
 export function AddressActions({ address }: AddressActionsProps) {
+  const t = useTranslation();
   const removeAddress = useMutation(api.addresses.remove);
   const toggleListening = useMutation(api.addresses.toggleListening);
   const [editAddressDialogOpen, setEditAddressDialogOpen] = useState(false);
   const handleDelete = async () => {
-    if (confirm("Are you sure you want to delete this address?")) {
+    if (confirm(t.addresses.deleteConfirm)) {
       try {
         await removeAddress({ id: address._id });
-        toast.success("Address deleted successfully");
+        toast.success(t.addresses.addressDeleted);
       } catch (error) {
         if (error instanceof ConvexError) {
-          toast.error(error.data.message || "Failed to delete address");
+          toast.error(error.data.message || t.addresses.failedToDelete);
         } else {
           toast.error(
-            error instanceof Error ? error.message : "Failed to delete address",
+            error instanceof Error ? error.message : t.addresses.failedToDelete,
           );
         }
       }
@@ -57,16 +59,18 @@ export function AddressActions({ address }: AddressActionsProps) {
         isListening: !address.isListening,
       });
       toast.success(
-        address.isListening ? "Monitoring stopped" : "Monitoring started",
+        address.isListening
+          ? t.addresses.monitoringStopped
+          : t.addresses.monitoringStarted,
       );
     } catch (error) {
       if (error instanceof ConvexError) {
-        toast.error(error.data.message || "Failed to toggle monitoring");
+        toast.error(error.data.message || t.addresses.failedToToggleMonitoring);
       } else {
         toast.error(
           error instanceof Error
             ? error.message
-            : "Failed to toggle monitoring",
+            : t.addresses.failedToToggleMonitoring,
         );
       }
     }
@@ -77,26 +81,26 @@ export function AddressActions({ address }: AddressActionsProps) {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
           <IconDots className="h-4 w-4" />
-          <span className="sr-only">Open menu</span>
+          <span className="sr-only">{t.addresses.openMenu}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuLabel>{t.addresses.actions}</DropdownMenuLabel>
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={() => setEditAddressDialogOpen(true)}>
             <IconPencil className="size-4" />
-            Edit
+            {t.addresses.edit}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleToggleMonitoring}>
             {address.isListening ? (
               <>
                 <IconPlayerPause className="size-4" />
-                <span>Stop</span>
+                <span>{t.addresses.stop}</span>
               </>
             ) : (
               <>
                 <IconPlayerPlay className="size-4" />
-                <span>Start</span>
+                <span>{t.addresses.start}</span>
               </>
             )}
           </DropdownMenuItem>
@@ -104,7 +108,7 @@ export function AddressActions({ address }: AddressActionsProps) {
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onClick={handleDelete}>
           <IconTrash className="h-4 w-4" />
-          Delete
+          {t.addresses.delete}
         </DropdownMenuItem>
       </DropdownMenuContent>
       <EditAddressDialog

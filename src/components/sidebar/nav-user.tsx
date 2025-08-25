@@ -10,7 +10,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -27,6 +26,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useTranslation } from "@/i18n/use-translation";
 
 export function NavUser({
   user,
@@ -39,6 +39,7 @@ export function NavUser({
   const { isMobile } = useSidebar();
   const { signOut } = useAuthActions();
   const router = useRouter();
+  const t = useTranslation();
 
   // Generate initials from name for avatar fallback
   const getInitials = (name: string) => {
@@ -103,28 +104,28 @@ export function NavUser({
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <Sparkles />
-                Upgrade to Pro
+                {t.user.upgrade}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <BadgeCheck />
-                Account
+                {t.user.account}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <CreditCard />
-                Billing
+                {t.user.billing}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Bell />
-                Notifications
+                {t.settings.notifications}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
-              Log out
+              {t.user.logout}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

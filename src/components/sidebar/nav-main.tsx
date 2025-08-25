@@ -2,6 +2,7 @@
 
 import { ChevronRight, type LucideIcon } from "lucide-react";
 import Link from "next/link";
+import { useTranslation } from "@/i18n/use-translation";
 import {
   Collapsible,
   CollapsibleContent,
@@ -32,9 +33,11 @@ export function NavMain({
     }[];
   }[];
 }) {
+  const t = useTranslation();
+
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupLabel>{t.common.platform}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.title}>

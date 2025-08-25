@@ -12,6 +12,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useTranslation } from "@/i18n/use-translation";
+import type { Translations } from "@/provider/language-provider";
 import { NetworkSelector } from "@/components/crypto/network-selector";
 import { TokenSelector } from "@/components/crypto/token-selector";
 import { Button } from "@/components/ui/button";
@@ -47,72 +49,80 @@ import {
 import { generateVerificationCode } from "@/lib/generator";
 import { validateTokenNetworkAddress } from "@/lib/validator";
 
-// Form schema with dynamic validation based on selected token and network
-const formSchema = z
-  .object({
-    token: z.enum(SUPPORTED_TOKENS, {
-      message: "Invalid token",
-    }),
-    network: z.enum(SUPPORTED_NETWORKS, {
-      message: "Invalid network",
-    }),
-    address: z.string().min(1, "Address is required"),
-    label: z.string().optional(),
-    webhookEnabled: z.boolean().optional(),
-    webhookUrl: z.string().optional(),
-    webhookVerificationCode: z.string().optional(),
-    webhookHeaderName: z.string().optional(),
-  })
-  .superRefine((data, ctx) => {
-    // Validate address based on selected token and network
-    const { token, network, address, webhookEnabled, webhookUrl } = data;
+// Form schema will be created inside the component to use translations
+const createFormSchema = (t: Translations) =>
+  z
+    .object({
+      token: z.enum(SUPPORTED_TOKENS, {
+        message: t.addresses.invalidAddress,
+      }),
+      network: z.enum(SUPPORTED_NETWORKS, {
+        message: t.addresses.invalidAddress,
+      }),
+      address: z.string().min(1, t.common.required),
+      label: z.string().optional(),
+      webhookEnabled: z.boolean().optional(),
+      webhookUrl: z.string().optional(),
+      webhookVerificationCode: z.string().optional(),
+      webhookHeaderName: z.string().optional(),
+    })
+    .superRefine((data, ctx) => {
+      // Validate address based on selected token and network
+      const { token, network, address, webhookEnabled, webhookUrl } = data;
 
-    // First check if the combination is valid
-    if (token && network && !isValidTokenNetworkCombination(token, network)) {
-      ctx.addIssue({
-        code: "custom",
-        message: `${token} is not supported on ${network} network`,
-        path: ["network"],
-      });
-    }
-
-    if (address && token && network) {
-      const isValid = validateTokenNetworkAddress(token, network, address);
-
-      if (!isValid) {
+      // First check if the combination is valid
+      if (token && network && !isValidTokenNetworkCombination(token, network)) {
         ctx.addIssue({
           code: "custom",
-          message: `Invalid ${token} address format for ${network} network`,
-          path: ["address"],
+          message: t.addresses.invalidTokenNetworkCombination
+            .replace("{token}", token)
+            .replace("{network}", network),
+          path: ["network"],
         });
       }
-    }
 
-    // Validate webhook fields when enabled
-    if (webhookEnabled) {
-      if (!webhookUrl) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Webhook URL is required when webhook is enabled",
-          path: ["webhookUrl"],
-        });
-      } else if (
-        !webhookUrl.startsWith("http://") &&
-        !webhookUrl.startsWith("https://")
-      ) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Webhook URL must be a valid URL",
-          path: ["webhookUrl"],
-        });
+      if (address && token && network) {
+        const isValid = validateTokenNetworkAddress(token, network, address);
+
+        if (!isValid) {
+          ctx.addIssue({
+            code: "custom",
+            message: t.addresses.invalidAddressFormat
+              .replace("{token}", token)
+              .replace("{network}", network),
+            path: ["address"],
+          });
+        }
       }
-    }
-  });
+
+      // Validate webhook fields when enabled
+      if (webhookEnabled) {
+        if (!webhookUrl) {
+          ctx.addIssue({
+            code: "custom",
+            message: t.webhook.webhookUrlRequired,
+            path: ["webhookUrl"],
+          });
+        } else if (
+          !webhookUrl.startsWith("http://") &&
+          !webhookUrl.startsWith("https://")
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: t.webhook.webhookUrlInvalid,
+            path: ["webhookUrl"],
+          });
+        }
+      }
+    });
 
 export function CreateAddressDialog() {
   const [open, setOpen] = useState(false);
   const addAddress = useMutation(api.addresses.add);
   const resetTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const t = useTranslation();
+
+  const formSchema = useMemo(() => createFormSchema(t), [t]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -154,8 +164,8 @@ export function CreateAddressDialog() {
   const addressPlaceholder = useMemo(
     () =>
       getTokenNetworkInfo(watchedToken, watchedNetwork)?.placeholder ||
-      "Enter address",
-    [watchedToken, watchedNetwork],
+      t.addresses.enterAddress,
+    [watchedToken, watchedNetwork, t],
   );
 
   // Handle network change to clear address
@@ -183,19 +193,19 @@ export function CreateAddressDialog() {
         label: values.label || undefined,
         webhook,
       });
-      toast.success("Address added successfully");
+      toast.success(t.addresses.addressAdded);
       setOpen(false);
       // Form will be reset after dialog close animation via handleOpenChange
     } catch (error) {
       if (error instanceof ConvexError) {
-        const errorMessage = error.data.message || "Failed to add address";
+        const errorMessage = error.data.message || t.addresses.failedToAdd;
         form.setError("address", {
           type: "manual",
           message: errorMessage,
         });
       } else {
         toast.error(
-          error instanceof Error ? error.message : "Failed to add address",
+          error instanceof Error ? error.message : t.addresses.failedToAdd,
         );
       }
     }
@@ -229,13 +239,13 @@ export function CreateAddressDialog() {
   const handleRegenerateCode = () => {
     const newCode = generateVerificationCode();
     form.setValue("webhookVerificationCode", newCode);
-    toast.success("New verification code generated");
+    toast.success(t.webhook.codeGenerated);
   };
 
   // Handle reset header name to default
   const handleResetHeaderName = () => {
     form.setValue("webhookHeaderName", "X-Webhook-Verification");
-    toast.success("Header name reset to default");
+    toast.success(t.webhook.headerReset);
   };
 
   return (
@@ -243,16 +253,16 @@ export function CreateAddressDialog() {
       <DialogTrigger asChild>
         <Button>
           <IconPlus className="size-4" />
-          Add Address
+          {t.addresses.addAddress}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[525px]">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <DialogHeader>
-              <DialogTitle>Add New Address</DialogTitle>
+              <DialogTitle>{t.addresses.addNewAddress}</DialogTitle>
               <DialogDescription>
-                Add a new cryptocurrency address to your collection
+                {t.addresses.addNewAddressDescription}
               </DialogDescription>
             </DialogHeader>
 
@@ -263,7 +273,7 @@ export function CreateAddressDialog() {
                   name="token"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Token</FormLabel>
+                      <FormLabel>{t.addresses.token}</FormLabel>
                       <FormControl>
                         <TokenSelector
                           value={field.value}
@@ -279,7 +289,7 @@ export function CreateAddressDialog() {
                   name="network"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Network</FormLabel>
+                      <FormLabel>{t.addresses.network}</FormLabel>
                       <FormControl>
                         <NetworkSelector
                           value={field.value}
@@ -301,7 +311,7 @@ export function CreateAddressDialog() {
                 name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Address</FormLabel>
+                    <FormLabel>{t.addresses.address}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -320,16 +330,16 @@ export function CreateAddressDialog() {
                 name="label"
                 render={({ field, fieldState }) => (
                   <FormItem>
-                    <FormLabel>Label</FormLabel>
+                    <FormLabel>{t.addresses.label}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="e.g., Main Wallet, Exchange"
+                        placeholder={t.addresses.labelPlaceholder}
                       />
                     </FormControl>
                     {!fieldState.error && (
                       <FormDescription>
-                        Optional label to identify this address
+                        {t.addresses.labelDescription}
                       </FormDescription>
                     )}
                     <FormMessage />
@@ -349,9 +359,9 @@ export function CreateAddressDialog() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>Enable Webhook Notifications</FormLabel>
+                      <FormLabel>{t.webhook.enableWebhook}</FormLabel>
                       <FormDescription>
-                        Receive transaction notifications via webhook
+                        {t.webhook.enableWebhookDescription}
                       </FormDescription>
                     </div>
                   </FormItem>
@@ -365,17 +375,17 @@ export function CreateAddressDialog() {
                     name="webhookUrl"
                     render={({ field, fieldState }) => (
                       <FormItem>
-                        <FormLabel>Webhook URL</FormLabel>
+                        <FormLabel>{t.webhook.webhookUrl}</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
-                            placeholder="https://example.com/webhook"
+                            placeholder={t.webhook.webhookUrlPlaceholder}
                             type="url"
                           />
                         </FormControl>
                         {!fieldState.error && (
                           <FormDescription>
-                            URL to receive transaction notifications
+                            {t.webhook.webhookUrlDescription}
                           </FormDescription>
                         )}
                         <FormMessage />
@@ -388,12 +398,14 @@ export function CreateAddressDialog() {
                     name="webhookVerificationCode"
                     render={({ field, fieldState }) => (
                       <FormItem>
-                        <FormLabel>Verification Code</FormLabel>
+                        <FormLabel>{t.webhook.verificationCode}</FormLabel>
                         <div className="flex gap-2">
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="Enter verification code"
+                              placeholder={
+                                t.webhook.verificationCodePlaceholder
+                              }
                               className="font-mono"
                             />
                           </FormControl>
@@ -402,14 +414,14 @@ export function CreateAddressDialog() {
                             variant="outline"
                             size="icon"
                             onClick={handleRegenerateCode}
-                            title="Generate new verification code"
+                            title={t.webhook.generateNewCode}
                           >
                             <IconRefresh className="size-4" />
                           </Button>
                         </div>
                         {!fieldState.error && (
                           <FormDescription>
-                            Code used to authenticate webhook requests
+                            {t.webhook.verificationCodeDescription}
                           </FormDescription>
                         )}
                         <FormMessage />
@@ -422,12 +434,16 @@ export function CreateAddressDialog() {
                     name="webhookHeaderName"
                     render={({ field, fieldState }) => (
                       <FormItem>
-                        <FormLabel>Verification Header Name</FormLabel>
+                        <FormLabel>
+                          {t.webhook.verificationHeaderName}
+                        </FormLabel>
                         <div className="flex gap-2">
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="X-Webhook-Verification"
+                              placeholder={
+                                t.webhook.verificationHeaderPlaceholder
+                              }
                               className="font-mono"
                             />
                           </FormControl>
@@ -436,14 +452,14 @@ export function CreateAddressDialog() {
                             variant="outline"
                             size="icon"
                             onClick={handleResetHeaderName}
-                            title="Reset to default header name"
+                            title={t.webhook.resetToDefault}
                           >
                             <IconRotateClockwise className="size-4" />
                           </Button>
                         </div>
                         {!fieldState.error && (
                           <FormDescription>
-                            Custom HTTP header name for the verification code
+                            {t.webhook.verificationHeaderDescription}
                           </FormDescription>
                         )}
                         <FormMessage />
@@ -456,7 +472,9 @@ export function CreateAddressDialog() {
 
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Adding..." : "Add Address"}
+                {form.formState.isSubmitting
+                  ? t.addresses.adding
+                  : t.addresses.addAddress}
               </Button>
             </DialogFooter>
           </form>

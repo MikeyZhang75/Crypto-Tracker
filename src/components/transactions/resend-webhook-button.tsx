@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { useTranslation } from "@/i18n/use-translation";
 
 interface ResendWebhookButtonProps {
   transactionId: Id<"transactions">;
@@ -15,6 +16,7 @@ interface ResendWebhookButtonProps {
 export function ResendWebhookButton({
   transactionId,
 }: ResendWebhookButtonProps) {
+  const t = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const resendWebhook = useMutation(api.webhooks.resend);
 
@@ -22,9 +24,9 @@ export function ResendWebhookButton({
     setIsLoading(true);
     try {
       await resendWebhook({ transactionId });
-      toast.success("Webhook resent successfully");
+      toast.success(t.transactions.webhookResentSuccessfully);
     } catch (error) {
-      toast.error("Failed to resend webhook");
+      toast.error(t.transactions.failedToResendWebhook);
       console.error("Error resending webhook:", error);
     } finally {
       setIsLoading(false);
@@ -37,11 +39,11 @@ export function ResendWebhookButton({
       size="sm"
       onClick={handleResend}
       disabled={isLoading}
-      title="Resend webhook"
+      title={t.transactions.resendWebhook}
       type="button"
     >
       <IconRefresh className={`size-4 ${isLoading ? "animate-spin" : ""}`} />
-      Resend
+      {t.transactions.resendWebhook}
     </Button>
   );
 }

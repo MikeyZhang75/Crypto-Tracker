@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import type { Doc } from "@/convex/_generated/dataModel";
+import { useTranslation } from "@/i18n/use-translation";
 import { cn } from "@/lib/utils";
 import { JsonViewer } from "./json-viewer";
 
@@ -26,6 +27,7 @@ export function LogDetails({
   onBack,
   isMobile,
 }: LogDetailsProps) {
+  const t = useTranslation();
   const getStatusColor = (status: Doc<"webhookLogs">["status"]) => {
     const colors = {
       success: "bg-emerald-500",
@@ -62,7 +64,7 @@ export function LogDetails({
               className="mb-4 -ml-2"
             >
               <IconChevronLeft className="h-4 w-4" />
-              Back to list
+              {t.common.back}
             </Button>
           )}
 
@@ -80,11 +82,17 @@ export function LogDetails({
           {log.errorMessage && <ErrorSection errorMessage={log.errorMessage} />}
 
           {/* Request Payload */}
-          <JsonViewer title="Request Payload" content={log.requestPayload} />
+          <JsonViewer
+            title={t.transactions.requestPayload}
+            content={log.requestPayload}
+          />
 
           {/* Response Body */}
           {log.responseBody && (
-            <JsonViewer title="Response Body" content={log.responseBody} />
+            <JsonViewer
+              title={t.transactions.responseBody}
+              content={log.responseBody}
+            />
           )}
         </div>
         <ScrollBar orientation="vertical" />
@@ -94,6 +102,7 @@ export function LogDetails({
 }
 
 function NoSelectionState() {
+  const t = useTranslation();
   return (
     <div className="flex-1 bg-gradient-to-br from-background via-background to-muted/5">
       <div className="flex h-full items-center justify-center p-8">
@@ -102,10 +111,11 @@ function NoSelectionState() {
             <IconWebhook className="h-12 w-12 text-muted-foreground/30" />
           </div>
           <div className="space-y-2">
-            <p className="text-base font-medium">No log selected</p>
+            <p className="text-base font-medium">
+              {t.transactions.noLogSelected}
+            </p>
             <p className="text-sm text-muted-foreground max-w-[250px]">
-              Select a webhook attempt from the list to view detailed
-              information
+              {t.transactions.selectLogToViewDetails}
             </p>
           </div>
         </div>
@@ -123,6 +133,7 @@ function StatusHeader({
   formattedDate: string;
   getStatusColor: (status: Doc<"webhookLogs">["status"]) => string;
 }) {
+  const t = useTranslation();
   return (
     <div className="rounded-xl bg-muted/30 p-5 space-y-3">
       <div className="flex flex-wrap items-center gap-3">
@@ -134,7 +145,7 @@ function StatusHeader({
           {log.statusCode ? `HTTP ${log.statusCode}` : log.status.toUpperCase()}
         </Badge>
         <Badge variant="secondary" className="h-7 px-3 font-mono text-sm">
-          Attempt #{log.attemptNumber}
+          {t.transactions.attempt} #{log.attemptNumber}
         </Badge>
         <span className="text-sm text-muted-foreground ml-auto">
           {formattedDate}
@@ -145,12 +156,13 @@ function StatusHeader({
 }
 
 function WebhookUrlSection({ webhookUrl }: { webhookUrl: string }) {
+  const t = useTranslation();
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold flex items-center gap-2">
           <IconExternalLink className="h-4 w-4 text-muted-foreground" />
-          Endpoint
+          {t.transactions.endpoint}
         </h3>
         <Button
           variant="outline"
@@ -160,7 +172,7 @@ function WebhookUrlSection({ webhookUrl }: { webhookUrl: string }) {
         >
           <a href={webhookUrl} target="_blank" rel="noopener noreferrer">
             <IconExternalLink className="h-3.5 w-3.5" />
-            Open URL
+            {t.transactions.openUrl}
           </a>
         </Button>
       </div>
@@ -174,11 +186,12 @@ function WebhookUrlSection({ webhookUrl }: { webhookUrl: string }) {
 }
 
 function ErrorSection({ errorMessage }: { errorMessage: string }) {
+  const t = useTranslation();
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-semibold flex items-center gap-2">
         <IconX className="h-4 w-4 text-destructive" />
-        <span className="text-destructive">Error Details</span>
+        <span className="text-destructive">{t.transactions.errorDetails}</span>
       </h3>
       <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-4">
         <code className="text-xs text-destructive break-words block leading-relaxed">

@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { IconRefresh, IconRotateClockwise } from "@tabler/icons-react";
 import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -30,39 +30,42 @@ import {
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
+import { useTranslation } from "@/i18n/use-translation";
 import { DIALOG_ANIMATION_DURATION } from "@/lib/constants";
 import { generateVerificationCode } from "@/lib/generator";
+import type { Translations } from "@/provider/language-provider";
 
 // Form schema for editing address
-const formSchema = z
-  .object({
-    label: z.string().optional(),
-    webhookEnabled: z.boolean(),
-    webhookUrl: z.string().optional(),
-    webhookVerificationCode: z.string().optional(),
-    webhookHeaderName: z.string().optional(),
-  })
-  .superRefine((data, ctx) => {
-    // Validate webhook fields when enabled
-    if (data.webhookEnabled) {
-      if (!data.webhookUrl) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Webhook URL is required when webhook is enabled",
-          path: ["webhookUrl"],
-        });
-      } else if (
-        !data.webhookUrl.startsWith("http://") &&
-        !data.webhookUrl.startsWith("https://")
-      ) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Webhook URL must be a valid URL",
-          path: ["webhookUrl"],
-        });
+const editFormSchema = (t: Translations) =>
+  z
+    .object({
+      label: z.string().optional(),
+      webhookEnabled: z.boolean(),
+      webhookUrl: z.string().optional(),
+      webhookVerificationCode: z.string().optional(),
+      webhookHeaderName: z.string().optional(),
+    })
+    .superRefine((data, ctx) => {
+      // Validate webhook fields when enabled
+      if (data.webhookEnabled) {
+        if (!data.webhookUrl) {
+          ctx.addIssue({
+            code: "custom",
+            message: t.webhook.webhookUrlRequired,
+            path: ["webhookUrl"],
+          });
+        } else if (
+          !data.webhookUrl.startsWith("http://") &&
+          !data.webhookUrl.startsWith("https://")
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: t.webhook.webhookUrlInvalid,
+            path: ["webhookUrl"],
+          });
+        }
       }
-    }
-  });
+    });
 
 interface EditAddressDialogProps {
   address: Doc<"addresses">;
@@ -75,8 +78,11 @@ export function EditAddressDialog({
   open,
   onOpenChange,
 }: EditAddressDialogProps) {
+  const t = useTranslation();
   const updateAddress = useMutation(api.addresses.update);
   const resetTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+
+  const formSchema = useMemo(() => editFormSchema(t), [t]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -126,19 +132,19 @@ export function EditAddressDialog({
         label: values.label || undefined,
         webhook,
       });
-      toast.success("Address updated successfully");
+      toast.success(t.addresses.addressUpdated);
       onOpenChange(false);
       // Form will be reset after dialog close animation via handleOpenChange
     } catch (error) {
       if (error instanceof ConvexError) {
-        const errorMessage = error.data.message || "Failed to update address";
+        const errorMessage = error.data.message || t.addresses.failedToUpdate;
         form.setError("webhookUrl", {
           type: "manual",
           message: errorMessage,
         });
       } else {
         toast.error(
-          error instanceof Error ? error.message : "Failed to update address",
+          error instanceof Error ? error.message : t.addresses.failedToUpdate,
         );
       }
     }
@@ -172,13 +178,13 @@ export function EditAddressDialog({
   const handleRegenerateCode = () => {
     const newCode = generateVerificationCode();
     form.setValue("webhookVerificationCode", newCode);
-    toast.success("New verification code generated");
+    toast.success(t.webhook.verificationCodeGenerated);
   };
 
   // Handle reset header name to default
   const handleResetHeaderName = () => {
     form.setValue("webhookHeaderName", "X-Webhook-Verification");
-    toast.success("Header name reset to default");
+    toast.success(t.webhook.headerNameReset);
   };
 
   return (
@@ -187,9 +193,9 @@ export function EditAddressDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <DialogHeader>
-              <DialogTitle>Edit Address</DialogTitle>
+              <DialogTitle>{t.addresses.editAddress}</DialogTitle>
               <DialogDescription>
-                Update the label and webhook settings for this address
+                {t.addresses.editAddressDescription}
               </DialogDescription>
             </DialogHeader>
 
@@ -199,7 +205,7 @@ export function EditAddressDialog({
                 name="label"
                 render={({ field, fieldState }) => (
                   <FormItem>
-                    <FormLabel>Label</FormLabel>
+                    <FormLabel>{t.addresses.label}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -208,7 +214,7 @@ export function EditAddressDialog({
                     </FormControl>
                     {!fieldState.error && (
                       <FormDescription>
-                        Optional label to identify this address
+                        {t.addresses.labelDescription}
                       </FormDescription>
                     )}
                     <FormMessage />
@@ -228,9 +234,9 @@ export function EditAddressDialog({
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>Enable Webhook Notifications</FormLabel>
+                      <FormLabel>{t.webhook.enableWebhook}</FormLabel>
                       <FormDescription>
-                        Receive transaction notifications via webhook
+                        {t.webhook.enableWebhookDescription}
                       </FormDescription>
                     </div>
                   </FormItem>
@@ -244,7 +250,7 @@ export function EditAddressDialog({
                     name="webhookUrl"
                     render={({ field, fieldState }) => (
                       <FormItem>
-                        <FormLabel>Webhook URL</FormLabel>
+                        <FormLabel>{t.webhook.webhookUrl}</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
@@ -254,7 +260,7 @@ export function EditAddressDialog({
                         </FormControl>
                         {!fieldState.error && (
                           <FormDescription>
-                            URL to receive transaction notifications
+                            {t.webhook.webhookUrlDescription}
                           </FormDescription>
                         )}
                         <FormMessage />
@@ -267,12 +273,14 @@ export function EditAddressDialog({
                     name="webhookVerificationCode"
                     render={({ field, fieldState }) => (
                       <FormItem>
-                        <FormLabel>Verification Code</FormLabel>
+                        <FormLabel>{t.webhook.verificationCode}</FormLabel>
                         <div className="flex gap-2">
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="Enter verification code"
+                              placeholder={
+                                t.webhook.verificationCodePlaceholder
+                              }
                               className="font-mono"
                             />
                           </FormControl>
@@ -281,14 +289,14 @@ export function EditAddressDialog({
                             variant="outline"
                             size="icon"
                             onClick={handleRegenerateCode}
-                            title="Generate new verification code"
+                            title={t.webhook.generateVerificationCode}
                           >
                             <IconRefresh className="size-4" />
                           </Button>
                         </div>
                         {!fieldState.error && (
                           <FormDescription>
-                            Code used to authenticate webhook requests
+                            {t.webhook.verificationCodeDescription}
                           </FormDescription>
                         )}
                         <FormMessage />
@@ -301,12 +309,12 @@ export function EditAddressDialog({
                     name="webhookHeaderName"
                     render={({ field, fieldState }) => (
                       <FormItem>
-                        <FormLabel>Verification Header Name</FormLabel>
+                        <FormLabel>{t.webhook.header}</FormLabel>
                         <div className="flex gap-2">
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="X-Webhook-Verification"
+                              placeholder={t.webhook.headerNamePlaceholder}
                               className="font-mono"
                             />
                           </FormControl>
@@ -315,14 +323,14 @@ export function EditAddressDialog({
                             variant="outline"
                             size="icon"
                             onClick={handleResetHeaderName}
-                            title="Reset to default header name"
+                            title={t.webhook.headerNameReset}
                           >
                             <IconRotateClockwise className="size-4" />
                           </Button>
                         </div>
                         {!fieldState.error && (
                           <FormDescription>
-                            Custom HTTP header name for the verification code
+                            {t.webhook.headerNameDescription}
                           </FormDescription>
                         )}
                         <FormMessage />
@@ -335,7 +343,7 @@ export function EditAddressDialog({
 
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Saving..." : "Save Changes"}
+                {form.formState.isSubmitting ? t.common.saving : t.common.save}
               </Button>
             </DialogFooter>
           </form>

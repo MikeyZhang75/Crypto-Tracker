@@ -2,6 +2,7 @@
 
 import { IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
 import type { Doc } from "@/convex/_generated/dataModel";
+import { useTranslation } from "@/i18n/use-translation";
 import { cn } from "@/lib/utils";
 
 interface LogListCardProps {
@@ -11,6 +12,7 @@ interface LogListCardProps {
 }
 
 export function LogListCard({ log, isSelected, onClick }: LogListCardProps) {
+  const t = useTranslation();
   const sentDate = new Date(log.sentAt);
 
   const statusConfig = {
@@ -59,9 +61,11 @@ export function LogListCard({ log, isSelected, onClick }: LogListCardProps) {
             <span className={statusConfig.color}>{statusConfig.icon}</span>
           </div>
           <div>
-            <p className="text-sm font-semibold capitalize">{log.status}</p>
+            <p className="text-sm font-semibold capitalize">
+              {t.webhook[log.status as keyof typeof t.webhook]}
+            </p>
             <p className="text-xs text-muted-foreground">
-              Attempt #{log.attemptNumber}
+              {t.transactions.attempt} #{log.attemptNumber}
             </p>
           </div>
         </div>

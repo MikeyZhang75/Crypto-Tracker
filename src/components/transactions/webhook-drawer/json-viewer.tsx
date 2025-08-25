@@ -6,6 +6,7 @@ import { useState } from "react";
 import "prismjs/components/prism-json";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { useTranslation } from "@/i18n/use-translation";
 
 interface JsonViewerProps {
   title: string;
@@ -13,6 +14,7 @@ interface JsonViewerProps {
 }
 
 export function JsonViewer({ title, content }: JsonViewerProps) {
+  const t = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const formatJson = (jsonString: string) => {
@@ -44,7 +46,7 @@ export function JsonViewer({ title, content }: JsonViewerProps) {
         {copied ? (
           <span className="inline-flex items-center h-8 px-3 text-xs gap-1.5 font-medium text-emerald-600 dark:text-emerald-500 bg-emerald-500/10 rounded-md">
             <IconCheck className="h-3.5 w-3.5" />
-            Copied!
+            {t.common.copied}
           </span>
         ) : (
           <Button
@@ -54,7 +56,7 @@ export function JsonViewer({ title, content }: JsonViewerProps) {
             className="h-8 px-3 text-xs gap-1.5 transition-all"
           >
             <IconCopy className="h-3.5 w-3.5" />
-            Copy JSON
+            {t.common.copy}
           </Button>
         )}
       </div>

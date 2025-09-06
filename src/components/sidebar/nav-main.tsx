@@ -2,7 +2,6 @@
 
 import { ChevronRight, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { useTranslation } from "@/i18n/use-translation";
 import {
   Collapsible,
   CollapsibleContent,
@@ -18,6 +17,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import { useTranslation } from "@/i18n/use-translation";
 
 export function NavMain({
   items,

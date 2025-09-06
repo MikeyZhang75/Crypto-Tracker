@@ -12,8 +12,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useTranslation } from "@/i18n/use-translation";
-import type { Translations } from "@/provider/language-provider";
 import { NetworkSelector } from "@/components/crypto/network-selector";
 import { TokenSelector } from "@/components/crypto/token-selector";
 import { Button } from "@/components/ui/button";
@@ -38,6 +36,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
+import { useTranslation } from "@/i18n/use-translation";
 import {
   DIALOG_ANIMATION_DURATION,
   getTokenNetworkInfo,
@@ -48,6 +47,7 @@ import {
 } from "@/lib/constants";
 import { generateVerificationCode } from "@/lib/generator";
 import { validateTokenNetworkAddress } from "@/lib/validator";
+import type { Translations } from "@/provider/language-provider";
 
 // Form schema will be created inside the component to use translations
 const createFormSchema = (t: Translations) =>

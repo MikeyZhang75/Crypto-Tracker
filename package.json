@@ -55,6 +55,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/bun": "^1.2.20",
     "@types/node": "^20",
+    "@types/prismjs": "^1.26.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "concurrently": "^9.2.0",
